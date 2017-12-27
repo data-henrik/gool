@@ -3,7 +3,7 @@ gool (Go: Online TV Recorder on Linux) ist eine Kommandozeilen-Anwendung für Li
 
 ## Features
 * **Dekodieren**  
-gool dekodiert .otrkey-Dateien unter Verwendung des OTR-Dekoder für Linux](http://www.onlinetvrecorder.com/downloads/otrdecoder-bin-linux-Ubuntu_8.04.2-x86_64-0.4.614.tar.bz2)
+gool dekodiert .otrkey-Dateien unter Verwendung des [OTR-Dekoders für Linux](http://www.onlinetvrecorder.com/downloads/otrdecoder-bin-linux-Ubuntu_8.04.2-x86_64-0.4.614.tar.bz2)
 * **Cutlists**  
 gool lädt automatisch Cutlists von [cutlist.at](http://cutlist.at) herunter
 * **Schneiden**  
