@@ -174,17 +174,25 @@ func fetchCutlistDetails(ids []string) *cutlist {
 			}
 			sg = new(seg)
 			// get start time
-			key, _ = sec.GetKey(clKeyTimeStart)
-			sg.timeStart, _ = strconv.ParseFloat(key.Value(), 64)
+			if sec.HasKey(clKeyTimeStart) {
+				key, _ = sec.GetKey(clKeyTimeStart)
+				sg.timeStart, _ = strconv.ParseFloat(key.Value(), 64)
+			}
 			// get time duration
-			key, _ = sec.GetKey(clKeyTimeDur)
-			sg.timeDur, _ = strconv.ParseFloat(key.Value(), 64)
+			if sec.HasKey(clKeyTimeDur) {
+				key, _ = sec.GetKey(clKeyTimeDur)
+				sg.timeDur, _ = strconv.ParseFloat(key.Value(), 64)
+			}
 			// get start frame
-			key, _ = sec.GetKey(clKeyFrameStart)
-			sg.frameStart, _ = strconv.Atoi(key.Value())
+			if sec.HasKey(clKeyFrameStart) {
+				key, _ = sec.GetKey(clKeyFrameStart)
+				sg.frameStart, _ = strconv.Atoi(key.Value())
+			}
 			// get frames duration
-			key, _ = sec.GetKey(clKeyFrameDur)
-			sg.frameDur, _ = strconv.Atoi(key.Value())
+			if sec.HasKey(clKeyFrameDur) {
+				key, _ = sec.GetKey(clKeyFrameDur)
+				sg.frameDur, _ = strconv.Atoi(key.Value())
+			}
 
 			if (sg.timeStart == 0.0 && sg.timeDur == 0.0) || (sg.frameStart == 0 && sg.frameDur == 0) {
 				rlog.Warn("Cutlist ID=" + id + ": Cut " + clSectionCut + strconv.Itoa(i) + " does not have sufficient information")

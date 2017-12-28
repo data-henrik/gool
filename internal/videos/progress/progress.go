@@ -129,7 +129,7 @@ func prependStr(key string, act int) string {
 	}
 
 	// build and return string
-	return fmt.Sprintf("%-12s :: %"+strconv.Itoa(prgKeyLen)+"s ", actStr[act], key)
+	return fmt.Sprintf("%"+strconv.Itoa(prgKeyLen)+"s:: %-12s ", key, actStr[act])
 }
 
 // Set updates the progress bar for a specific video (key) / action (act) combination based on the

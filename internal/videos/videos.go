@@ -429,7 +429,7 @@ func Read(patterns []string) error {
 	)
 
 	// print status message
-	fmt.Printf("\n\033[1m::Lese Videodateien ein ...\033[22m\n")
+	fmt.Printf("\n\033[1m:: Lese Videodateien ein ...\033[22m\n")
 
 	// add working dir and the sub dirs for enc, dec and cut to the pattern list
 	patterns = append(patterns, cfg.WrkDirPath+"/*", cfg.EncDirPath+"/*", cfg.DecDirPath+"/*", cfg.CutDirPath+"/*")
@@ -442,8 +442,7 @@ func Read(patterns []string) error {
 		}
 
 		for _, filePath = range filePaths {
-			// Check if filePath is a directory. If yes, do nothing with it
-			// and continue
+			// check if filePath is a directory. In that case: do nothing and continue
 			info, _ := os.Stat(filePath)
 			if info.IsDir() {
 				continue
