@@ -37,7 +37,7 @@ import (
 // root command 'gool'
 var rootCmd = &cobra.Command{
 	Use:     "gool",
-	Version: "1.0.1",
+	Version: "0.9.1",
 }
 
 // sub command 'list'
