@@ -2,10 +2,10 @@
 BINARY=gool
 
 # These are the values we want to pass for Version and BuildTime
-VERSION=0.9.1
+VERSION=0.9.2
 
 # Setup the -ldflags option for go build here, interpolate the variable values
-LDFLAGS=-ldflags "-X github.com/mipimipi/gool/internal/release.Version=${VERSION}"
+LDFLAGS=-ldflags "-X github.com/mipimipi/gool/pkg/release.Version=${VERSION}"
 
 all:
 	go build ${LDFLAGS} -o ${BINARY} cmd/main.go
