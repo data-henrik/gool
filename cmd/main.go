@@ -20,7 +20,7 @@ package main
 import (
 	"os"
 
-	"github.com/mipimipi/gool/internal/cli"
+	"github.com/mipimipi/gool/pkg/cli"
 )
 
 func main() {

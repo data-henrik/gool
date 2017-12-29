@@ -30,15 +30,15 @@ import (
 
 	"github.com/mipimipi/cobra"
 
-	"github.com/mipimipi/gool/internal/cfg"
-	"github.com/mipimipi/gool/internal/release"
-	"github.com/mipimipi/gool/internal/videos"
+	"github.com/mipimipi/gool/pkg/cfg"
+	"github.com/mipimipi/gool/pkg/release"
+	"github.com/mipimipi/gool/pkg/videos"
 )
 
 // root command 'gool'
 var rootCmd = &cobra.Command{
 	Use:     "gool",
-	Version: release.Version + " build " + release.Build,
+	Version: release.Version,
 }
 
 // sub command 'list'

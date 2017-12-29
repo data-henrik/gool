@@ -31,8 +31,8 @@ import (
 
 	"github.com/romana/rlog"
 
-	"github.com/mipimipi/gool/internal/cfg"
-	"github.com/mipimipi/gool/internal/videos/progress"
+	"github.com/mipimipi/gool/pkg/cfg"
+	"github.com/mipimipi/gool/pkg/videos/progress"
 )
 
 // callOTRDecoder calls otrdecoder and handles the command line output.

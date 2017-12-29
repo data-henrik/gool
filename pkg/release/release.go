@@ -23,6 +23,4 @@ package release
 var (
 	// Version is the program version
 	Version string
-	// Build contains the git commit id
-	Build string
 )

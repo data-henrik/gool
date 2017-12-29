@@ -33,8 +33,8 @@ import (
 
 	"github.com/romana/rlog"
 
-	"github.com/mipimipi/gool/internal/cfg"
-	"github.com/mipimipi/gool/internal/videos/progress"
+	"github.com/mipimipi/gool/pkg/cfg"
+	"github.com/mipimipi/gool/pkg/videos/progress"
 )
 
 // cleanTmpDir deletes all files in the tmp directory that belong to the video indicated by key

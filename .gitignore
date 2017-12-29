@@ -16,3 +16,4 @@ debug
 gool
 .vscode/launch.json
 .vscode/tasks.json
+cmd/cmd

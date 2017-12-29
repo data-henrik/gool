@@ -35,7 +35,7 @@ import (
 	"github.com/go-ini/ini"
 	"github.com/romana/rlog"
 
-	"github.com/mipimipi/gool/internal/cfg"
+	"github.com/mipimipi/gool/pkg/cfg"
 )
 
 // Cutlist stores cutlists loaded from a cutlist server
