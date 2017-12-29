@@ -23,6 +23,7 @@ package videos
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -189,6 +190,7 @@ func callFFmpeg(v *video) error {
 		outFilePath    string
 		concatFilePath string
 		f              *os.File
+		stderr         io.ReadCloser
 	)
 	// entire procedure consists of one step in case the cutlist only contains
 	// one step. If it contains more than one step, another step is necessary
@@ -197,7 +199,7 @@ func callFFmpeg(v *video) error {
 		// ... one step in case
 		prgInterval = 100
 	} else {
-		prgInterval = int(100 / (len(v.cl.segs) + 1))
+		prgInterval = 100 / (len(v.cl.segs) + 1)
 	}
 
 	// create file to store the file list for FFmpeg concat
@@ -208,7 +210,7 @@ func callFFmpeg(v *video) error {
 			return err
 		}
 		// make sure that the file is closed
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		rlog.Trace(3, "File to store the names of the temporary video has been created: ", concatFilePath)
 
 		// make sure that tmp directory is cleaned up
@@ -252,7 +254,7 @@ func callFFmpeg(v *video) error {
 			outFilePath,
 		)
 		// Set up error pipe
-		stderr, err := cmd.StderrPipe()
+		stderr, err = cmd.StderrPipe()
 		if err != nil {
 			rlog.Error("Cannot establish pipe for stderr: %v" + err.Error())
 			return err
@@ -305,7 +307,7 @@ func callFFmpeg(v *video) error {
 			outFilePath,
 		)
 		// Set up error pipe
-		stderr, err := cmd.StderrPipe()
+		stderr, err = cmd.StderrPipe()
 		if err != nil {
 			rlog.Error("Cannot establish pipe for stderr: %v" + err.Error())
 			return err

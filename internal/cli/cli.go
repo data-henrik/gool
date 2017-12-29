@@ -31,13 +31,14 @@ import (
 	"github.com/mipimipi/cobra"
 
 	"github.com/mipimipi/gool/internal/cfg"
+	"github.com/mipimipi/gool/internal/release"
 	"github.com/mipimipi/gool/internal/videos"
 )
 
 // root command 'gool'
 var rootCmd = &cobra.Command{
 	Use:     "gool",
-	Version: Version + " build " + Build,
+	Version: release.Version + " build " + release.Build,
 }
 
 // sub command 'list'
@@ -98,6 +99,6 @@ func init() {
 }
 
 // Execute executes the root command
-func Execute() {
-	rootCmd.Execute()
+func Execute() error {
+	return rootCmd.Execute()
 }

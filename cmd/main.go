@@ -18,9 +18,13 @@
 package main
 
 import (
+	"os"
+
 	"github.com/mipimipi/gool/internal/cli"
 )
 
 func main() {
-	cli.Execute()
+	if err := cli.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

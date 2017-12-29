@@ -9,3 +9,11 @@ LDFLAGS=-ldflags "-X github.com/mipimipi/gool/internal/cli.Version=${VERSION} -X
 
 all:
 	go build ${LDFLAGS} -o ${GOPATH}/bin/${BINARY} cmd/main.go
+
+$(GOMETALINTER):
+	go get -u github.com/alecthomas/gometalinter
+	gometalinter --install &> /dev/null
+
+.PHONY: lint
+lint: $(GOMETALINTER)
+	gometalinter ./... --vendor

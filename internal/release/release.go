@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with gool. If not, see <http://www.gnu.org/licenses/>.
 
-package cli
+package release
 
-// This file contains variables for version information. The corresponding
+// Package version contains variables for version information. The corresponding
 // variables are filled during make.
 
 var (

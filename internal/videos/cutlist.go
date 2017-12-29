@@ -119,7 +119,7 @@ func fetchCutlistDetails(ids []string) *cutlist {
 		}
 		// read data
 		clINI, err = ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		// if data couldn't be read: Nothing left to do, try next
 		if err != nil {
 			continue
@@ -254,7 +254,7 @@ func fetchCutlistHeaders(key string) []string {
 
 	// read data
 	clXML, err = ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	// if data couldn't be read: Nothing to do, return
 	if err != nil {
 		return ids

@@ -68,16 +68,17 @@ var prgLock sync.Mutex
 // the time package and can be stopped via the stop channel. It is incremented
 // each interval microseconds
 func AutoIncr(key string, act int, interval time.Duration, stop <-chan struct{}) {
-	// tick channel receives an event every 0.5 seconds
-	tick := time.Tick(interval * time.Millisecond)
+	ticker := time.NewTicker(interval * time.Millisecond)
 	for {
 		select {
-		case <-tick:
+		case <-ticker.C:
 			// increase progress bar
 			Set(key, act, int(getBar(key, act).Current())+100/prgBarLen)
 		case <-stop:
 			// set progress to 100% (which also completes the bar) ...
 			Set(key, act, 100)
+			// stop ticker ...
+			ticker.Stop()
 			// and return
 			return
 		}
