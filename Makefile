@@ -5,11 +5,10 @@ BINARY=gool
 VERSION=0.9.2
 
 # Setup the -ldflags option for go build here, interpolate the variable values
-LDFLAGS=-ldflags "-X github.com/mipimipi/gool/src.version=${VERSION}"
+LDFLAGS=-ldflags "-X .version=${VERSION}"
 
 all:
-	cd src
-	go build ${LDFLAGS} -o ../${BINARY}
+	go build ${LDFLAGS} -o ${BINARY}
 
 $(GOMETALINTER):
 	go get -u github.com/alecthomas/gometalinter
