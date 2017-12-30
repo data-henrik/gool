@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with gool. If not, see <http://www.gnu.org/licenses/>.
 
-package videos
+package main
 
-// This file contains the implmenetation of cutlist retrievals. Currently,
+// cutlist.go contains the implmenetation of cutlist retrievals. Currently,
 // only cutlist.at is supported.
 
 import (
@@ -34,8 +34,6 @@ import (
 
 	"github.com/go-ini/ini"
 	"github.com/romana/rlog"
-
-	"github.com/mipimipi/gool/pkg/cfg"
 )
 
 // Cutlist stores cutlists loaded from a cutlist server
@@ -113,7 +111,7 @@ func fetchCutlistDetails(ids []string) *cutlist {
 		cl.id = id
 
 		// fetch cutlist from cutlist.at by calling URL
-		if resp, err = http.Get(cfg.CLSUrl + "getfile.php?id=" + id); err != nil {
+		if resp, err = http.Get(cfg.clsURL + "getfile.php?id=" + id); err != nil {
 			// if no culist could be fetched: Nothing left to do, try next
 			continue
 		}
@@ -247,7 +245,7 @@ func fetchCutlistHeaders(key string) []string {
 	var clRelVals map[string]string
 
 	// fetch cutlist header from cutlist.at by calling URL
-	if resp, err = http.Get(cfg.CLSUrl + "getxml.php?name=" + key); err != nil {
+	if resp, err = http.Get(cfg.clsURL + "getxml.php?name=" + key); err != nil {
 		// if no culist could be fetched: Nothing left to do, return
 		return ids
 	}

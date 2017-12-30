@@ -17,14 +17,10 @@
 
 package main
 
-import (
-	"os"
+// release.go contains variables for version information. The corresponding
+// variables are filled during make.
 
-	"github.com/mipimipi/gool/pkg/cli"
+var (
+	// version is the program version
+	version string
 )
-
-func main() {
-	if err := cli.Execute(); err != nil {
-		os.Exit(1)
-	}
-}

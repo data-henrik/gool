@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with gool.  If not, see <http://www.gnu.org/licenses/>.
 
-package videos
+package main
 
-// In this file, the call of command line tools to cut a video based on
+// cut.go implements the call of command line tools to cut a video based on
 // a cutlist is implemented. Currently, only FFmpeg is used.
 
 import (
@@ -32,14 +32,11 @@ import (
 	"strings"
 
 	"github.com/romana/rlog"
-
-	"github.com/mipimipi/gool/pkg/cfg"
-	"github.com/mipimipi/gool/pkg/videos/progress"
 )
 
 // cleanTmpDir deletes all files in the tmp directory that belong to the video indicated by key
 func cleanTmpDir(key string) {
-	filePaths, _ := filepath.Glob(cfg.TmpDirPath + "/" + key + "*")
+	filePaths, _ := filepath.Glob(cfg.tmpDirPath + "/" + key + "*")
 	for _, filePath := range filePaths {
 		if err := os.Remove(filePath); err != nil {
 			err = fmt.Errorf("%s konnte nicht gelöscht werden: %v", filePath, err)
@@ -161,7 +158,7 @@ func getIDRFrameTime(filePath string, key string, timeOrig float64, direct int) 
 	if err = cmd.Wait(); err != nil {
 		// In case command line execution returns error, content of stderr (now contained in
 		// errStr) is written into error file
-		errFilePath := cfg.LogDirPath + "/" + key + cfg.ErrFileSuffixCut
+		errFilePath := cfg.logDirPath + "/" + key + errFileSuffixCut
 		if errFile, e := os.Create(errFilePath); e != nil {
 			rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
 		} else {
@@ -204,7 +201,7 @@ func callFFmpeg(v *video) error {
 
 	// create file to store the file list for FFmpeg concat
 	if len(v.cl.segs) > 1 {
-		concatFilePath = cfg.TmpDirPath + "/" + v.key + ".list"
+		concatFilePath = cfg.tmpDirPath + "/" + v.key + ".list"
 		if f, err = os.Create(concatFilePath); err != nil {
 			rlog.Error("Cannot create list file for FFmpeg concat for " + v.key + ": " + err.Error())
 			return err
@@ -221,12 +218,12 @@ func callFFmpeg(v *video) error {
 	for i := 0; i < len(v.cl.segs); i++ {
 		// assemble filepath for output file
 		if len(v.cl.segs) == 1 {
-			outFilePath = cfg.CutDirPath + "/" + v.key
+			outFilePath = cfg.cutDirPath + "/" + v.key
 			outFilePath = outFilePath[0:len(outFilePath)-len(filepath.Ext(outFilePath))] + ".cut" + filepath.Ext(outFilePath)
 		} else {
 			// in case different partial videos needs to be created temporarily,
 			// their name is set to [VIDEO.KEY].[COUNTER].extension
-			outFilePath = cfg.TmpDirPath + "/" + v.key + fmt.Sprintf(".%d", i) + filepath.Ext(v.key)
+			outFilePath = cfg.tmpDirPath + "/" + v.key + fmt.Sprintf(".%d", i) + filepath.Ext(v.key)
 		}
 
 		// write to file list for FFmpeg concatenate
@@ -274,7 +271,7 @@ func callFFmpeg(v *video) error {
 		if err = cmd.Wait(); err != nil {
 			// In case command line execution returns error, content of stderr (now contained in
 			// errStr) is written into error file
-			errFilePath := cfg.LogDirPath + "/" + v.key + cfg.ErrFileSuffixCut
+			errFilePath := cfg.logDirPath + "/" + v.key + errFileSuffixCut
 			if errFile, e := os.Create(errFilePath); e != nil {
 				rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
 			} else {
@@ -287,13 +284,13 @@ func callFFmpeg(v *video) error {
 
 		// update progress
 		prg += prgInterval
-		progress.Set(v.key, progress.PrgActCut, prg)
+		setPrgBar(v.key, prgActCut, prg)
 	}
 
 	// assemble
 	if len(v.cl.segs) > 1 {
 		// assemble filepath of output file
-		outFilePath = cfg.CutDirPath + "/" + v.key
+		outFilePath = cfg.cutDirPath + "/" + v.key
 		outFilePath = outFilePath[0:len(outFilePath)-len(filepath.Ext(outFilePath))] + ".cut" + filepath.Ext(outFilePath)
 
 		// Create shell command for concatenating
@@ -327,7 +324,7 @@ func callFFmpeg(v *video) error {
 		if err = cmd.Wait(); err != nil {
 			// In case command line execution returns error, content of stderr (now contained in
 			// errStr) is written into error file
-			errFilePath := cfg.LogDirPath + "/" + v.key + cfg.ErrFileSuffixCut
+			errFilePath := cfg.logDirPath + "/" + v.key + errFileSuffixCut
 			if errFile, e := os.Create(errFilePath); e != nil {
 				rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
 			} else {
@@ -340,7 +337,7 @@ func callFFmpeg(v *video) error {
 	}
 
 	// set progress to 100%
-	progress.Set(v.key, progress.PrgActCut, 100)
+	setPrgBar(v.key, prgActCut, 100)
 
 	return err
 }

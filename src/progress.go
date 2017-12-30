@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with gool. If not, see <http://www.gnu.org/licenses/>.
 
-package progress
+package main
 
-// Package progress is a wrapper for the multi process bar package mpb.
+// progress.go is a wrapper for the multi process bar package mpb.
 // Process bars are created with a key consisting of a videky key and an
 // action (decode, fetch cutlist, cut).
 // Progress can be set for a given video / action combination in two
@@ -37,9 +37,9 @@ import (
 
 // constants to indicate actions
 const (
-	PrgActDec = iota // action "decode"
-	PrgActCL         // action "fetch cutlist"
-	PrgActCut        // action "cut"
+	prgActDec = iota // action "decode"
+	prgActCL         // action "fetch cutlist"
+	prgActCut        // action "cut"
 )
 
 // constants for string lengths
@@ -63,20 +63,20 @@ var prgList = make(map[prgKey]*mpb.Bar)
 // lock to enable concurrent writing into map
 var prgLock sync.Mutex
 
-// AutoIncr implements an automated counter to increase the progress for a given
+// autoIncr implements an automated counter to increase the progress for a given
 // video and action combination. The counter is based on the Tick channel from
 // the time package and can be stopped via the stop channel. It is incremented
 // each interval microseconds
-func AutoIncr(key string, act int, interval time.Duration, stop <-chan struct{}) {
+func autoIncr(key string, act int, interval time.Duration, stop <-chan struct{}) {
 	ticker := time.NewTicker(interval * time.Millisecond)
 	for {
 		select {
 		case <-ticker.C:
 			// increase progress bar
-			Set(key, act, int(getBar(key, act).Current())+100/prgBarLen)
+			setPrgBar(key, act, int(getBar(key, act).Current())+100/prgBarLen)
 		case <-stop:
 			// set progress to 100% (which also completes the bar) ...
-			Set(key, act, 100)
+			setPrgBar(key, act, 100)
 			// stop ticker ...
 			ticker.Stop()
 			// and return
@@ -133,9 +133,9 @@ func prependStr(key string, act int) string {
 	return fmt.Sprintf("%"+strconv.Itoa(prgKeyLen)+"s:: %-12s ", key, actStr[act])
 }
 
-// Set updates the progress bar for a specific video (key) / action (act) combination based on the
+// set updates the progress bar for a specific video (key) / action (act) combination based on the
 // progress (prg)
-func Set(key string, act int, prg int) {
+func setPrgBar(key string, act int, prg int) {
 	//get progress bar for a combination of a video and an action
 	bar := getBar(key, act)
 
@@ -143,9 +143,9 @@ func Set(key string, act int, prg int) {
 	bar.Incr(prg - int(bar.Current()))
 }
 
-// Start creates a new progress container and needs to be called before any
+// start creates a new progress container and needs to be called before any
 //progress bar is created
-func Start() {
+func start() {
 	// create new progress container
 	p = mpb.New(
 		mpb.WithWidth(prgBarLen),
@@ -154,6 +154,6 @@ func Start() {
 
 // Stop calls the Stop function of progress container. This flushes the
 // buffer. Stop needs to be called at the end of video processing.
-func Stop() {
+func stop() {
 	p.Stop()
 }

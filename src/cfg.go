@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with gool. If not, see <http://www.gnu.org/licenses/>.
 
-package cfg
+package main
 
-// Package cfg implements the logic that is needed for the configuration
+// cfg.go implements the logic that is needed for the configuration
 // of gool and provides some constants:
 // - For directory names (actually sub sirectorties of the gool working
 //   directory)
@@ -25,7 +25,8 @@ package cfg
 // - For names of command line programs that are called by gool (e.g.
 //   OTR decoder or FFmpeg)
 //
-// GetFromFile is the main function. It reads the configuration from the
+// The configuration is stored in the global variable cfg.
+// getFromFile is the main function. It reads the configuration from the
 // file gool.conf (which is stored in the user condig directory of the OS).
 // If the file does not contain all config values, the user is requested
 // to enter them and gool.conf is updated accordingly.
@@ -61,46 +62,49 @@ const (
 
 // Constants for directory names
 const (
-	SubDirNameEnc = "Encoded"
-	SubDirNameDec = "Decoded"
-	SubDirNameCut = "Cut"
-	SubDirNameLog = "log"
-	SubDirNameTmp = "tmp"
+	subDirNameEnc = "Encoded"
+	subDirNameDec = "Decoded"
+	subDirNameCut = "Cut"
+	subDirNameLog = "log"
+	subDirNameTmp = "tmp"
 )
 
 // Constants for error file suffices
 const (
-	ErrFileSuffixDec = ".decode.error"
-	ErrFileSuffixCut = ".cut.eror"
+	errFileSuffixDec = ".decode.error"
+	errFileSuffixCut = ".cut.eror"
 )
 
 // Constants related to cli commands or programs
 const (
-	OTRDecoderName = "otrdecoder"
-	FFmpegName     = "ffmpeg"
+	otrDecoderName = "otrdecoder"
+	ffmpegName     = "ffmpeg"
 )
 
-// Variables, containing the values read from the gool config file
-var (
-	WrkDirPath    string // working dir for gool
-	EncDirPath    string // dir for encoded videos
-	DecDirPath    string // dir for decoded videos
-	CutDirPath    string // dir for cut videos
-	LogDirPath    string // dir for log files
-	TmpDirPath    string // dir for temporary files
-	NumCpus       int    // number of CPUs that gool is allowed to use
-	OTRDecDirPath string // directory where otrdecoder is stored
-	OTRUsername   string // username for OTR
-	OTRPassword   string // password for OTR
-	CLSUrl        string // URL of custlist server
-	DoCleanUp     bool   // delete files that are no longer needed
-)
+// config contains the content read from the gool config file
+type config struct {
+	wrkDirPath    string // working dir for gool
+	encDirPath    string // dir for encoded videos
+	decDirPath    string // dir for decoded videos
+	cutDirPath    string // dir for cut videos
+	logDirPath    string // dir for log files
+	tmpDirPath    string // dir for temporary files
+	numCpus       int    // number of CPUs that gool is allowed to use
+	otrDecDirPath string // directory where otrdecoder is stored
+	otrUsername   string // username for OTR
+	otrPassword   string // password for OTR
+	clsURL        string // URL of custlist server
+	doCleanUp     bool   // delete files that are no longer needed
+}
+
+// global config structure
+var cfg config
 
 // Function type to abstract functions that retrieve config values from user input
 type getFromKeyboard func() (string, error)
 
 func init() {
-	DoCleanUp = true
+	cfg.doCleanUp = true
 }
 
 // Checks if the directory dirName exists. Depending on the parameter doCreate, the directory
@@ -152,7 +156,7 @@ func getCLSUrlFromKeyboard() (string, error) {
 	return input, err
 }
 
-// GetFromFile reads the gool configuration from the file $XDG_CONFIG_HOME/gool.conf
+// getFromFile reads the gool configuration from the file $XDG_CONFIG_HOME/gool.conf
 // and stores the configuration values in the attributes of instance of type config.
 // - If $XDG_CONFIG_HOME is not set, ~/.config will be used as default instead.
 // - If gool.conf is not yet existing, it will be created (incl. the directories
@@ -160,7 +164,7 @@ func getCLSUrlFromKeyboard() (string, error) {
 // - If the file gets created, it is filled with default values.
 // - Only if the config file neither is existing nor can be created, the function
 //   exits with error.
-func GetFromFile() error {
+func (cfg *config) getFromFile() error {
 	var (
 		err     error
 		cfgFile *ini.File
@@ -211,21 +215,21 @@ func GetFromFile() error {
 	if key, err = getKey(cfgFile, sec, cfgKeyWrkDir, getWrkDirPathFromKeyboard, &hasChanged); err != nil {
 		return err
 	}
-	WrkDirPath = key.Value()
+	cfg.wrkDirPath = key.Value()
 	// determine sub directory paths
-	if EncDirPath, err = getSubDirPath(SubDirNameEnc); err != nil {
+	if cfg.encDirPath, err = getSubDirPath(subDirNameEnc); err != nil {
 		return err
 	}
-	if DecDirPath, err = getSubDirPath(SubDirNameDec); err != nil {
+	if cfg.decDirPath, err = getSubDirPath(subDirNameDec); err != nil {
 		return err
 	}
-	if CutDirPath, err = getSubDirPath(SubDirNameCut); err != nil {
+	if cfg.cutDirPath, err = getSubDirPath(subDirNameCut); err != nil {
 		return err
 	}
-	if LogDirPath, err = getSubDirPath(SubDirNameLog); err != nil {
+	if cfg.logDirPath, err = getSubDirPath(subDirNameLog); err != nil {
 		return err
 	}
-	if TmpDirPath, err = getSubDirPath(SubDirNameTmp); err != nil {
+	if cfg.tmpDirPath, err = getSubDirPath(subDirNameTmp); err != nil {
 		return err
 	}
 
@@ -233,7 +237,7 @@ func GetFromFile() error {
 	if key, err = getKey(cfgFile, sec, cfgKeyNumCPUs, getNumCPUsFromKeyboard, &hasChanged); err != nil {
 		return err
 	}
-	NumCpus, _ = strconv.Atoi(key.Value())
+	cfg.numCpus, _ = strconv.Atoi(key.Value())
 
 	// Get DECODE section. If it doesn't exist: Create it.
 	if sec, err = getSection(cfgFile, cfgSectionDecode, &hasChanged); err != nil {
@@ -245,19 +249,19 @@ func GetFromFile() error {
 		return err
 	}
 
-	OTRDecDirPath = key.Value()
+	cfg.otrDecDirPath = key.Value()
 
 	// Read OTR_USERNAME key. If it doesn't exist: Create it.
 	if key, err = getKey(cfgFile, sec, cfgKeyOTRUsername, getOTRUsernameFromKeyboard, &hasChanged); err != nil {
 		return err
 	}
-	OTRUsername = key.Value()
+	cfg.otrUsername = key.Value()
 
 	// Read OTR_PASSWORD key. If it doesn't exist: Create it.
 	if key, err = getKey(cfgFile, sec, cfgKeyOTRPassword, getOTRPasswordFromKeyboard, &hasChanged); err != nil {
 		return err
 	}
-	OTRPassword = key.Value()
+	cfg.otrPassword = key.Value()
 
 	// Get CUT section. If it doesn't exist: Create it..
 	if sec, err = getSection(cfgFile, cfgSectionCut, &hasChanged); err != nil {
@@ -268,7 +272,7 @@ func GetFromFile() error {
 	if key, err = getKey(cfgFile, sec, cfgKeyCLSUrl, getCLSUrlFromKeyboard, &hasChanged); err != nil {
 		return err
 	}
-	CLSUrl = key.Value()
+	cfg.clsURL = key.Value()
 
 	// if entries of the configuration file have been changed is needs to be saved
 	if hasChanged {
@@ -401,7 +405,7 @@ func getOTRDecDirPathFromKeyboard() (string, error) {
 		}
 		// Check if the directory contains the otrdecoder file. If not write an error and
 		// ask again for the path
-		otrDecFilepath := otrDecDirPath + "/" + OTRDecoderName
+		otrDecFilepath := otrDecDirPath + "/" + otrDecoderName
 		if _, err = os.Stat(otrDecFilepath); err != nil {
 			if os.IsNotExist(err) {
 				rlog.Trace(1, otrDecDirPath+" doesn't contain otrdecoder, ask again")
@@ -476,7 +480,7 @@ func getSection(iniFile *ini.File, secName string, hasChanged *bool) (*ini.Secti
 // exists. If not, it's created.
 // The function returns the full path of the directory.
 func getSubDirPath(subDirName string) (string, error) {
-	subDirPath := WrkDirPath + "/" + subDirName
+	subDirPath := cfg.wrkDirPath + "/" + subDirName
 	err := checkDirPath(subDirPath, true)
 
 	return subDirPath, err

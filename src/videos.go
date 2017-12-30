@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with gool. If not, see <http://www.gnu.org/licenses/>.
 
-package videos
+package main
 
-// Package videos contains all the logic to decode videos, retrieve
+// videos.go contains all the logic to decode videos, retrieve
 // cutlists and cut videos.
 
 import (
@@ -31,9 +31,6 @@ import (
 	"sync"
 
 	"github.com/romana/rlog"
-
-	"github.com/mipimipi/gool/pkg/cfg"
-	"github.com/mipimipi/gool/pkg/videos/progress"
 )
 
 // Constants for video status
@@ -73,8 +70,8 @@ type video struct {
 	cl       *cutlist // cutlists
 }
 
-// Global video list
-var vl = make(map[string]*video)
+// type video list
+type vlist map[string]*video
 
 // format str for listing videos
 var vidFormatStr = "%-" + strconv.Itoa(vidPrtKeyLen) + "s %-" + strconv.Itoa(vidPrtStatusLen) + "s %-" + strconv.Itoa(vidPrtCLLen) + "s %-" + strconv.Itoa(vidPrtResLen) + "s"
@@ -194,7 +191,7 @@ func (v *video) fetchCutlist(wg *sync.WaitGroup, r chan<- res) {
 	stop := make(chan struct{})
 
 	// start automatic progress bar which increments every 0.5s
-	go progress.AutoIncr(v.key, progress.PrgActCL, 500, stop)
+	go autoIncr(v.key, prgActCL, 500, stop)
 
 	// stop progress bar once fetchCutlists finalizes
 	defer func() { stop <- struct{}{} }()
@@ -229,23 +226,6 @@ func (v *video) hasCutlists() bool {
 	return true
 }
 
-// Print prints the video list to stdout
-func Print() {
-	// Check if there are videos at all ...
-	if len(vl) == 0 {
-		fmt.Printf("\nKeine Videos gefunden\n\n")
-		return
-	}
-
-	// ... if yes: Print list
-	fmt.Printf("\n\033[1m"+vidFormatStr+"\033[22m\n", "Video", "Status", "CL", "Resultat")
-	fmt.Println("--------------------------------------------------------------------------------")
-	for _, v := range vl {
-		fmt.Println(v.string())
-	}
-	fmt.Printf("\n")
-}
-
 // Takes result of a video processing step (decoding or cutting) and adjusts the
 // video status etc.
 func (v *video) postProcessing(vErr error) error {
@@ -262,7 +242,7 @@ func (v *video) postProcessing(vErr error) error {
 
 	// If cleanup is required: Delete old file
 	// TODO: Store uncutted file in "CutOriginal"
-	if cfg.DoCleanUp {
+	if cfg.doCleanUp {
 		if err = os.Remove(v.filePath); err != nil {
 			err = fmt.Errorf("%s konnte nicht gelöscht werden: %v", v.filePath, err)
 			rlog.Warn(v.filePath + " couldn't be deleted: " + err.Error())
@@ -274,12 +254,12 @@ func (v *video) postProcessing(vErr error) error {
 	// Set new status and adjust filePath
 	if v.status == vidStatusEnc {
 		v.status = vidStatusDec
-		v.filePath = cfg.DecDirPath + "/" + v.key
+		v.filePath = cfg.decDirPath + "/" + v.key
 		return nil
 	}
 	if v.status == vidStatusDec {
 		v.status = vidStatusCut
-		v.filePath = cfg.CutDirPath + "/" + v.key
+		v.filePath = cfg.cutDirPath + "/" + v.key
 	}
 
 	return err
@@ -295,12 +275,12 @@ func (v *video) preProcessing() error {
 	var err error
 
 	// Delete old error file
-	errFilePath = cfg.LogDirPath + "/" + v.key
+	errFilePath = cfg.logDirPath + "/" + v.key
 	switch v.status {
 	case vidStatusEnc:
-		errFilePath += cfg.ErrFileSuffixDec
+		errFilePath += errFileSuffixDec
 	case vidStatusDec:
-		errFilePath += cfg.ErrFileSuffixCut
+		errFilePath += errFileSuffixCut
 	}
 	_ = os.Remove(errFilePath)
 
@@ -311,11 +291,11 @@ func (v *video) preProcessing() error {
 	// (if it isn't already there)
 	switch v.status {
 	case vidStatusEnc:
-		dstPath = cfg.EncDirPath + "/" + fileName
+		dstPath = cfg.encDirPath + "/" + fileName
 	case vidStatusDec:
-		dstPath = cfg.DecDirPath + "/" + fileName
+		dstPath = cfg.decDirPath + "/" + fileName
 	case vidStatusCut:
-		dstPath = cfg.CutDirPath + "/" + fileName
+		dstPath = cfg.cutDirPath + "/" + fileName
 	}
 	// if video file is not in the correct sub dir ...
 	if v.filePath != dstPath {
@@ -331,13 +311,30 @@ func (v *video) preProcessing() error {
 	return err
 }
 
-// Process triggers the complete processing of the videos in the video list:
+// print prints the video list to stdout
+func (vl vlist) print() {
+	// Check if there are videos at all ...
+	if len(vl) == 0 {
+		fmt.Printf("\nKeine Videos gefunden\n\n")
+		return
+	}
+
+	// ... if yes: Print list
+	fmt.Printf("\n\033[1m"+vidFormatStr+"\033[22m\n", "Video", "Status", "CL", "Resultat")
+	fmt.Println("--------------------------------------------------------------------------------")
+	for _, v := range vl {
+		fmt.Println(v.string())
+	}
+	fmt.Printf("\n")
+}
+
+// process triggers the complete processing of the videos in the video list:
 // Decoding, fetching of cutlist, cutting.
 // As far as possible, this is done in parallel. For one video, decoding and
 // fetching of cutlist is done in parallel. If both is done, the video is cut.
 // This behaviour is implemented using go routines and channels.
 // The processing steps of different videos are done in parallel.
-func Process() {
+func (vl vlist) process() {
 	var i int
 
 	// determine if there are videos that are relevant for executiont (as otherwise start
@@ -363,10 +360,10 @@ func Process() {
 	)
 
 	// remove tmp directory
-	defer func() { _ = os.RemoveAll(cfg.TmpDirPath) }()
+	defer func() { _ = os.RemoveAll(cfg.tmpDirPath) }()
 
 	// start progress tracking
-	progress.Start()
+	start()
 
 	// trigger processing for all videos in the list
 	for _, v := range vl {
@@ -411,13 +408,13 @@ func Process() {
 	}
 
 	// stop progress tracking
-	progress.Stop()
+	stop()
 }
 
-// Read builds up a video list by reading videos ...
+// read builds up a video list by reading videos ...
 // - from the places passed via command line parameters
 // - stored in the gool working dir and its sub directories "Encoded", "Decoded", Cut"
-func Read(patterns []string) error {
+func (vl vlist) read(patterns []string) error {
 	var (
 		err       error
 		filePaths []string
@@ -432,7 +429,7 @@ func Read(patterns []string) error {
 	fmt.Printf("\n\033[1m:: Lese Videodateien ein ...\033[22m\n")
 
 	// add working dir and the sub dirs for enc, dec and cut to the pattern list
-	patterns = append(patterns, cfg.WrkDirPath+"/*", cfg.EncDirPath+"/*", cfg.DecDirPath+"/*", cfg.CutDirPath+"/*")
+	patterns = append(patterns, cfg.wrkDirPath+"/*", cfg.encDirPath+"/*", cfg.decDirPath+"/*", cfg.cutDirPath+"/*")
 
 	for _, p := range patterns {
 		// Get all files that fits to pattern p by calling globbing function
@@ -530,7 +527,7 @@ func (v *video) updateFromFile(status string, filePath string) {
 		v.filePath = filePath
 	} else {
 		// if clean up is required: Delete file
-		if cfg.DoCleanUp {
+		if cfg.doCleanUp {
 			if err = os.Remove(filePath); err != nil {
 				err = fmt.Errorf("%s konnte nicht gelöscht werden: %v", filePath, err)
 				rlog.Warn(filePath + " couldn't be deleted: " + err.Error())

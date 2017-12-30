@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with gool. If not, see <http://www.gnu.org/licenses/>.
 
-package cli
+package main
 
-// Package cli implementes the command line interface (i.e. the root command
+// cli.go implementes the command line interface (i.e. the root command
 // and sub commands for gool. This is done with the help of a fork of package
 // cobra (https://github.com/spf13/cobra). The only reason for forking cobra
 // instead of using the original package was to have a German translation of
@@ -29,16 +29,12 @@ import (
 	"runtime"
 
 	"github.com/mipimipi/cobra"
-
-	"github.com/mipimipi/gool/pkg/cfg"
-	"github.com/mipimipi/gool/pkg/release"
-	"github.com/mipimipi/gool/pkg/videos"
 )
 
 // root command 'gool'
 var rootCmd = &cobra.Command{
 	Use:     "gool",
-	Version: release.Version,
+	Version: version,
 }
 
 // sub command 'list'
@@ -50,19 +46,21 @@ var cmdLst = &cobra.Command{
 	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Read configuration and ...
-		if err := cfg.GetFromFile(); err != nil {
+		if err := cfg.getFromFile(); err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
 		// ... set the number of processes to be used by gool
-		_ = runtime.GOMAXPROCS(cfg.NumCpus)
+		_ = runtime.GOMAXPROCS(cfg.numCpus)
+		// create video list
+		vl := make(vlist)
 		// read videos
-		if err := videos.Read(args); err != nil {
+		if err := vl.read(args); err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
 		// print list of videos
-		videos.Print()
+		vl.print()
 	},
 }
 
@@ -75,21 +73,23 @@ var cmdPrc = &cobra.Command{
 	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Read configuration and ...
-		if err := cfg.GetFromFile(); err != nil {
+		if err := cfg.getFromFile(); err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
 		// ... set the number of processes to be used by gool
-		_ = runtime.GOMAXPROCS(cfg.NumCpus)
+		_ = runtime.GOMAXPROCS(cfg.numCpus)
+		// create video list
+		vl := make(vlist)
 		// read videos
-		if err := videos.Read(args); err != nil {
+		if err := vl.read(args); err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
 		// process videos
-		videos.Process()
+		vl.process()
 		// print list of videos
-		videos.Print()
+		vl.print()
 	},
 }
 
@@ -99,6 +99,6 @@ func init() {
 }
 
 // Execute executes the root command
-func Execute() error {
+func execute() error {
 	return rootCmd.Execute()
 }

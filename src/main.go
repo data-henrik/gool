@@ -15,12 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with gool. If not, see <http://www.gnu.org/licenses/>.
 
-package release
+package main
 
-// Package version contains variables for version information. The corresponding
-// variables are filled during make.
-
-var (
-	// Version is the program version
-	Version string
+import (
+	"os"
 )
+
+func main() {
+	if err := execute(); err != nil {
+		os.Exit(1)
+	}
+}

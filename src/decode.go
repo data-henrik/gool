@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with gool.  If not, see <http://www.gnu.org/licenses/>.
 
-package videos
+package main
 
-// This file implements the call of command line tools (currently,
+// decode.go implements the call of command line tools (currently,
 // that's only otrdecoder) to decode .otrkey files.
 
 import (
@@ -30,9 +30,6 @@ import (
 	"strings"
 
 	"github.com/romana/rlog"
-
-	"github.com/mipimipi/gool/pkg/cfg"
-	"github.com/mipimipi/gool/pkg/videos/progress"
 )
 
 // callOTRDecoder calls otrdecoder and handles the command line output.
@@ -46,19 +43,19 @@ func callOTRDecoder(filePath string, key string) error {
 	)
 
 	// Create filepath to call otr decoder: If no directory path has been configured ...
-	if cfg.OTRDecDirPath == "" {
+	if cfg.otrDecDirPath == "" {
 		// set the filepath to the program file name ...
-		otrFilePath = cfg.OTRDecoderName
+		otrFilePath = otrDecoderName
 	} else {
 		// else: build the filepath from the directory path and the program file name
-		otrFilePath = cfg.OTRDecDirPath + "/" + cfg.OTRDecoderName
+		otrFilePath = cfg.otrDecDirPath + "/" + otrDecoderName
 	}
 	// Create shell command for decoding
 	cmd := exec.Command(otrFilePath,
-		"-e", cfg.OTRUsername,
-		"-p", cfg.OTRPassword,
+		"-e", cfg.otrUsername,
+		"-p", cfg.otrPassword,
 		"-i", filePath,
-		"-o", cfg.DecDirPath)
+		"-o", cfg.decDirPath)
 	// Set up output pipe
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -89,11 +86,11 @@ func callOTRDecoder(filePath string, key string) error {
 			n, _ := strconv.Atoi(strings.TrimSuffix(cmdOut.Text(), "%"))
 			if (prg+n/3)-prgSet > 5 || prgSet == 0 {
 				prgSet = (prg + n) / 3
-				progress.Set(key, progress.PrgActDec, prgSet)
+				setPrgBar(key, prgActDec, prgSet)
 			}
 		}
 	}
-	progress.Set(key, progress.PrgActDec, 100)
+	setPrgBar(key, prgActDec, 100)
 
 	// read command's stderr line by line and store it in a errStr for further processing
 	cmdErr := bufio.NewScanner(stderr)
@@ -104,7 +101,7 @@ func callOTRDecoder(filePath string, key string) error {
 	if err = cmd.Wait(); err != nil {
 		// In case command line execution returns error, content of stderr (now contained in
 		// errStr) is written into error file
-		errFilePath := cfg.LogDirPath + "/" + key + cfg.ErrFileSuffixDec
+		errFilePath := cfg.logDirPath + "/" + key + errFileSuffixDec
 		if errFile, e := os.Create(errFilePath); e != nil {
 			rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
 		} else {
