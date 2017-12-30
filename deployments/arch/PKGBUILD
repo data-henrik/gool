@@ -14,9 +14,16 @@ options=('!strip' '!emptydirs')
 source=("http://github.com/mipimipi/$pkgname/archive/v$pkgver.tar.gz")
 sha256sums=('bb830ba87f0a94d4bfa56b7a201db4ef714c79fea01de90ba19b30768c1901e2')
 
+prepare() {
+  cd "$pkgname-$pkgver"
+
+  GOPATH=`pwd` go get -d
+}
+
 build() {
   cd "$pkgname-$pkgver"
 
+  GOPATH=`pwd` go build
   make
 }
 
@@ -25,4 +32,9 @@ package() {
 
   install -Dm755 "$pkgname" "$pkgdir/usr/bin/$pkgname"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+#  install -Dm755 "$pkgname-$pkgver" "$pkgdir/usr/bin/$pkgname"
+#  install -Dm644 "$srcdir/default.png" "$pkgdir/usr/share/pixmaps/default.png"
+#  install -Dm644 "$pkgname.1.gz" "$pkgdir/usr/share/man/man1/$pkgname.1.gz"
+#  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }
