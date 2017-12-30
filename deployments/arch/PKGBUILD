@@ -16,14 +16,13 @@ sha256sums=('bb830ba87f0a94d4bfa56b7a201db4ef714c79fea01de90ba19b30768c1901e2')
 
 prepare() {
   cd "$pkgname-$pkgver"
-
-  GOPATH=`pwd` go get -d
+  export GOPATH=$(pwd)
+  go get -d
 }
 
 build() {
   cd "$pkgname-$pkgver"
-
-  GOPATH=`pwd` go build
+  export GOPATH=$(pwd)
   make
 }
 
