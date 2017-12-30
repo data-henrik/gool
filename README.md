@@ -32,7 +32,7 @@ Um gool zu installieren, gehen Sie wie folgt vor:
 
 1. Laden Sie das [neueste Release](https://github.com/mipimipi/gool/releases) herunter.
 1. Entpacken Sie die Archiv-Datei.
-1. Im Verzeichnis `gool-x.y.z` (wobei x.y.z die Version von gool ist) rufen Sie `make` auf. Danach befindet sich die ausführbare Datei `gool` im Verzeichnis `$GOPATH/bin`.
+1. Im Verzeichnis `gool-x.y.z` (wobei x.y.z die Version von gool ist) rufen Sie `make` auf.
 
 ## Verwendung
 

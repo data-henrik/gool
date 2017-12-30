@@ -1,0 +1,26 @@
+# Maintainer: Michael Picht michael[dot]picht[at]ussenterprise[dot]de
+
+pkgname=gool
+pkgver=0
+pkgrel=1
+pkgdesc="PACKAGE DESCRIPTION"
+arch=('x86_64' 'i686')
+url="http://github.com/mipimipi/$pkgname/"
+license=('GPL')
+makedepends=('go')
+options=('!strip' '!emptydirs')
+source=("http://github.com/mipimipi/$pkgname/archive/v$pkgver.tar.gz")
+sha256sums=('bb830ba87f0a94d4bfa56b7a201db4ef714c79fea01de90ba19b30768c1901e2')
+
+build() {
+  cd "$pkgname-$pkgver"
+
+  make
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+
+  install -Dm755 "$pkgname" "$pkgdir/usr/bin/$pkgname"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
