@@ -1,12 +1,13 @@
-# Maintainer: Michael Picht michael[dot]picht[at]ussenterprise[dot]de
+# Maintainer: Michael Picht <michael dot picht at ussenterprise dot de>
+# Contributor: Michael Picht <michael dot picht at ussenterprise dot de>
 
 pkgname=gool
-pkgver=0
+pkgver=0.9.2
 pkgrel=1
-pkgdesc="PACKAGE DESCRIPTION"
+pkgdesc="Go - Online TV Recorder on Linux"
 arch=('x86_64' 'i686')
 url="http://github.com/mipimipi/$pkgname/"
-license=('GPL')
+license=('GPL3')
 makedepends=('go','xdg-utils')
 options=('!strip' '!emptydirs')
 source=("http://github.com/mipimipi/$pkgname/archive/v$pkgver.tar.gz")
