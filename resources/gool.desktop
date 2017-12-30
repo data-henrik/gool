@@ -33,7 +33,7 @@ Name=gool
 Comment=Go - Online TV Recorder on Linux
 
 # The executable of the application, possibly with arguments.
-Exec=/usr/bin/gool process
+Exec="/usr/bin/gool process"
 
 # The name of the icon that will be used to display this entry
 Icon=gool
