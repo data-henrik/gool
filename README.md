@@ -26,17 +26,17 @@ gool kann mit einem einzigen Aufruf viele Videodateien bearbeiten. Die Arbeitssc
 
 ## Installation
 
-gool ist in der Sprache Go geschrieben und setzt die Installation von Go und den Go-Tools (unter Debian etwa sind dies die Pakete golang-go und golang-go.tools) voraus. Stellen Sie sicher,dass Sie die Umbegungsvariablen GOPATH und GOBINgesetzt haben. Es ist außerdem ratsam, den Pfad $GOBIN in PATH aufzunehmen, damit Sie gool aus jedem Verzeichnis einfach aufrufen können.
+gool ist in der Sprache Go geschrieben und setzt die Installation von Go und den Go-Tools (unter Debian etwa sind dies die Pakete golang-go und golang-go.tools) voraus. Stellen Sie sicher, dass Sie die Umgebungsvariable `GOPATH` gesetzt haben. Es ist außerdem ratsam, den Pfad `$GOPATH/bin` in `PATH` aufzunehmen, damit Sie gool aus jedem Verzeichnis einfach aufrufen können.
 
 Um gool mit allen Abhängigkeiten zu laden, geben Sie
 
-    `go get github.com/mipimipi/gool`
+    go get github.com/mipimipi/gool
 
 ein. Falls Sie eine Fehlermeldung wegen des Fehlens von git bekommen, installieren Sie git und führen Sie den o.g. Befehl noch einmal aus.
 
 Mit
 
-    `go install github.com/mipimipi/gool`
+    go install github.com/mipimipi/gool
 
 installieren Sie gool.
 
