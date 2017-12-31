@@ -30,9 +30,180 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/romana/rlog"
 )
+
+// callFFmpeg calls ffmpeg and handles the command line output. In case the
+// cutlist only has one step, one single call of FFmpeg is sufficient.
+// Otherwise FFmpeg needs to be called (a) once for every cut to extract a
+// corresponding piece of the video and (b) again to concatenate the different
+// partial videos. Therefore, these two cases need to be distinguished
+// throughout this function
+func (v *video) callFFmpeg() error {
+	var (
+		err            error
+		errStr         string
+		prg            int
+		prgInterval    int
+		outFilePath    string
+		concatFilePath string
+		f              *os.File
+		stderr         io.ReadCloser
+	)
+	// entire procedure consists of one step in case the cutlist only contains
+	// one step. If it contains more than one step, another step is necessary
+	// to concatenate the partial videos. prgInterval is set to 100/#steps
+	if len(v.cl.segs) == 1 {
+		// ... one step in case
+		prgInterval = 100
+	} else {
+		prgInterval = 100 / (len(v.cl.segs) + 1)
+	}
+
+	// create file to store the file list for FFmpeg concat
+	if len(v.cl.segs) > 1 {
+		concatFilePath = cfg.tmpDirPath + "/" + v.key + ".list"
+		if f, err = os.Create(concatFilePath); err != nil {
+			rlog.Error("Cannot create list file for FFmpeg concat for " + v.key + ": " + err.Error())
+			return err
+		}
+		// make sure that the file is closed
+		defer func() { _ = f.Close() }()
+		rlog.Trace(3, "File to store the names of the temporary video has been created: ", concatFilePath)
+
+		// make sure that tmp directory is cleaned up
+		defer cleanTmpDir(v.key)
+	}
+
+	// loop over cutlist
+	for i := 0; i < len(v.cl.segs); i++ {
+		// assemble filepath for output file
+		if len(v.cl.segs) == 1 {
+			outFilePath = cfg.cutDirPath + "/" + v.key
+			outFilePath = outFilePath[0:len(outFilePath)-len(filepath.Ext(outFilePath))] + ".cut" + filepath.Ext(outFilePath)
+		} else {
+			// in case different partial videos needs to be created temporarily,
+			// their name is set to [VIDEO.KEY].[COUNTER].extension
+			outFilePath = cfg.tmpDirPath + "/" + v.key + fmt.Sprintf(".%d", i) + filepath.Ext(v.key)
+		}
+
+		// write to file list for FFmpeg concatenate
+		if len(v.cl.segs) > 1 {
+			if _, err = f.WriteString("file '" + outFilePath + "'\n"); err != nil {
+				rlog.Error("Could not write to " + concatFilePath + ": " + err.Error())
+				return err
+			}
+		}
+
+		// adjust start and end of cut intervall to IDR frames
+		ts, _ := getIDRFrameTime(v.filePath, v.key, v.cl.segs[i].timeStart, directUp)
+		te, _ := getIDRFrameTime(v.filePath, v.key, v.cl.segs[i].timeStart+v.cl.segs[i].timeDur, directDown)
+
+		// Create shell command for decoding
+		cmd := exec.Command("ffmpeg",
+			"-ss", strconv.FormatFloat(ts, 'f', 3, 64),
+			"-i", v.filePath,
+			"-t", strconv.FormatFloat(te-ts, 'f', 3, 64),
+			"-codec", "copy",
+			"-reset_timestamps", "1",
+			"-async", "1",
+			"-map", "0",
+			"-y",
+			outFilePath,
+		)
+		// Set up error pipe
+		stderr, err = cmd.StderrPipe()
+		if err != nil {
+			rlog.Error("Cannot establish pipe for stderr: %v" + err.Error())
+			return err
+		}
+		// Start the command after having set up the pipes
+		if err = cmd.Start(); err != nil {
+			rlog.Error("Cannot start FFmpeg: %v" + err.Error())
+			return err
+		}
+		rlog.Trace(3, "Video has been cut with FFmpeg: ", outFilePath)
+
+		// read command's stderr line by line and store it in a errStr for further processing
+		cmdErr := bufio.NewScanner(stderr)
+		for cmdErr.Scan() {
+			errStr += fmt.Sprintf("%s\n", cmdErr.Text())
+		}
+		if err = cmd.Wait(); err != nil {
+			// In case command line execution returns error, content of stderr (now contained in
+			// errStr) is written into error file
+			errFilePath := cfg.logDirPath + "/" + v.key + errFileSuffixCut
+			if errFile, e := os.Create(errFilePath); e != nil {
+				rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
+			} else {
+				if _, e = errFile.WriteString(errStr); e != nil {
+					rlog.Error("Cannot write into \"" + errFilePath + "\": " + e.Error())
+				}
+				_ = errFile.Close()
+			}
+		}
+
+		// update progress
+		prg += prgInterval
+		v.setPrgBar(prgActCut, prg)
+	}
+
+	// assemble
+	if len(v.cl.segs) > 1 {
+		// assemble filepath of output file
+		outFilePath = cfg.cutDirPath + "/" + v.key
+		outFilePath = outFilePath[0:len(outFilePath)-len(filepath.Ext(outFilePath))] + ".cut" + filepath.Ext(outFilePath)
+
+		// Create shell command for concatenating
+		cmd := exec.Command("ffmpeg",
+			"-f", "concat",
+			"-safe", "0",
+			"-i", concatFilePath,
+			"-codec", "copy",
+			"-reset_timestamps", "1",
+			"-y",
+			outFilePath,
+		)
+		// Set up error pipe
+		stderr, err = cmd.StderrPipe()
+		if err != nil {
+			rlog.Error("Cannot establish pipe for stderr: %v" + err.Error())
+			return err
+		}
+		// Start the command after having set up the pipes
+		if err = cmd.Start(); err != nil {
+			rlog.Error("Cannot start FFmpeg concat: %v" + err.Error())
+			return err
+		}
+		rlog.Trace(3, "Videos have been concatenated: ", outFilePath)
+
+		// read command's stderr line by line and store it in a errStr for further processing
+		cmdErr := bufio.NewScanner(stderr)
+		for cmdErr.Scan() {
+			errStr += fmt.Sprintf("%s\n", cmdErr.Text())
+		}
+		if err = cmd.Wait(); err != nil {
+			// In case command line execution returns error, content of stderr (now contained in
+			// errStr) is written into error file
+			errFilePath := cfg.logDirPath + "/" + v.key + errFileSuffixCut
+			if errFile, e := os.Create(errFilePath); e != nil {
+				rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
+			} else {
+				if _, e = errFile.WriteString(errStr); e != nil {
+					rlog.Error("Cannot write into \"" + errFilePath + "\": " + e.Error())
+				}
+				_ = errFile.Close()
+			}
+		}
+	}
+
+	// set progress to 100%
+	v.setPrgBar(prgActCut, 100)
+
+	return err
+}
 
 // cleanTmpDir deletes all files in the tmp directory that belong to the video indicated by key
 func cleanTmpDir(key string) {
@@ -51,6 +222,39 @@ const (
 	directUp   = iota // search upwards for IDR frame
 	directDown        // search downwards for IDR frame
 )
+
+// cut cuts a video according to it's cutlist. The method is called as go
+// routine. It can only be called if the video has (a) been decoded and
+// (b) a cutlist has been fetched. The fulfillment of both prerequisites
+// is indicated by two items in the channel r.
+func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
+	// Decrease wait group counter when function is finished
+	defer wg.Done()
+
+	// receive to items from channel r ...
+	r0 := <-r
+	r1 := <-r
+	// ... and check if none of them carries an error (this is the case
+	// if decoding and fetching of cutlist have been successful)
+	if r0.err != nil || r1.err != nil {
+		rlog.Trace(1, "Error during decoding or cutlist fetching")
+		return
+	}
+
+	// clean up stuff from former processing runs
+	if err := v.preProcessing(); err != nil {
+		return
+	}
+
+	// Call FFmpeg to cut the video
+	errCut := v.callFFmpeg()
+
+	// Process videos based on error info from decoding go routine
+	if err := v.postProcessing(errCut); err != nil {
+		fmt.Println(err.Error())
+		rlog.Error(err.Error())
+	}
+}
 
 // getIDRFrameTime receives a point in time for a given video and return the point in time
 // of the closest IDR frame. The frames of the video are retrieved by calling FFprobe.
@@ -170,174 +374,4 @@ func getIDRFrameTime(filePath string, key string, timeOrig float64, direct int) 
 	}
 
 	return timeIDR, nil
-}
-
-// callFFmpeg calls ffmpeg and handles the command line output. In case the
-// cutlist only has one step, one single call of FFmpeg is sufficient.
-// Otherwise FFmpeg needs to be called (a) once for every cut to extract a
-// corresponding piece of the video and (b) again to concatenate the different
-// partial videos. Therefore, these two cases need to be distinguished
-// throughout this function
-func callFFmpeg(v *video) error {
-	var (
-		err            error
-		errStr         string
-		prg            int
-		prgInterval    int
-		outFilePath    string
-		concatFilePath string
-		f              *os.File
-		stderr         io.ReadCloser
-	)
-	// entire procedure consists of one step in case the cutlist only contains
-	// one step. If it contains more than one step, another step is necessary
-	// to concatenate the partial videos. prgInterval is set to 100/#steps
-	if len(v.cl.segs) == 1 {
-		// ... one step in case
-		prgInterval = 100
-	} else {
-		prgInterval = 100 / (len(v.cl.segs) + 1)
-	}
-
-	// create file to store the file list for FFmpeg concat
-	if len(v.cl.segs) > 1 {
-		concatFilePath = cfg.tmpDirPath + "/" + v.key + ".list"
-		if f, err = os.Create(concatFilePath); err != nil {
-			rlog.Error("Cannot create list file for FFmpeg concat for " + v.key + ": " + err.Error())
-			return err
-		}
-		// make sure that the file is closed
-		defer func() { _ = f.Close() }()
-		rlog.Trace(3, "File to store the names of the temporary video has been created: ", concatFilePath)
-
-		// make sure that tmp directory is cleaned up
-		defer cleanTmpDir(v.key)
-	}
-
-	// loop over cutlist
-	for i := 0; i < len(v.cl.segs); i++ {
-		// assemble filepath for output file
-		if len(v.cl.segs) == 1 {
-			outFilePath = cfg.cutDirPath + "/" + v.key
-			outFilePath = outFilePath[0:len(outFilePath)-len(filepath.Ext(outFilePath))] + ".cut" + filepath.Ext(outFilePath)
-		} else {
-			// in case different partial videos needs to be created temporarily,
-			// their name is set to [VIDEO.KEY].[COUNTER].extension
-			outFilePath = cfg.tmpDirPath + "/" + v.key + fmt.Sprintf(".%d", i) + filepath.Ext(v.key)
-		}
-
-		// write to file list for FFmpeg concatenate
-		if len(v.cl.segs) > 1 {
-			if _, err = f.WriteString("file '" + outFilePath + "'\n"); err != nil {
-				rlog.Error("Could not write to " + concatFilePath + ": " + err.Error())
-				return err
-			}
-		}
-
-		// adjust start and end of cut intervall to IDR frames
-		ts, _ := getIDRFrameTime(v.filePath, v.key, v.cl.segs[i].timeStart, directUp)
-		te, _ := getIDRFrameTime(v.filePath, v.key, v.cl.segs[i].timeStart+v.cl.segs[i].timeDur, directDown)
-
-		// Create shell command for decoding
-		cmd := exec.Command("ffmpeg",
-			"-ss", strconv.FormatFloat(ts, 'f', 3, 64),
-			"-i", v.filePath,
-			"-t", strconv.FormatFloat(te-ts, 'f', 3, 64),
-			"-codec", "copy",
-			"-reset_timestamps", "1",
-			"-async", "1",
-			"-map", "0",
-			"-y",
-			outFilePath,
-		)
-		// Set up error pipe
-		stderr, err = cmd.StderrPipe()
-		if err != nil {
-			rlog.Error("Cannot establish pipe for stderr: %v" + err.Error())
-			return err
-		}
-		// Start the command after having set up the pipes
-		if err = cmd.Start(); err != nil {
-			rlog.Error("Cannot start FFmpeg: %v" + err.Error())
-			return err
-		}
-		rlog.Trace(3, "Video has been cut with FFmpeg: ", outFilePath)
-
-		// read command's stderr line by line and store it in a errStr for further processing
-		cmdErr := bufio.NewScanner(stderr)
-		for cmdErr.Scan() {
-			errStr += fmt.Sprintf("%s\n", cmdErr.Text())
-		}
-		if err = cmd.Wait(); err != nil {
-			// In case command line execution returns error, content of stderr (now contained in
-			// errStr) is written into error file
-			errFilePath := cfg.logDirPath + "/" + v.key + errFileSuffixCut
-			if errFile, e := os.Create(errFilePath); e != nil {
-				rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
-			} else {
-				if _, e = errFile.WriteString(errStr); e != nil {
-					rlog.Error("Cannot write into \"" + errFilePath + "\": " + e.Error())
-				}
-				_ = errFile.Close()
-			}
-		}
-
-		// update progress
-		prg += prgInterval
-		setPrgBar(v.key, prgActCut, prg)
-	}
-
-	// assemble
-	if len(v.cl.segs) > 1 {
-		// assemble filepath of output file
-		outFilePath = cfg.cutDirPath + "/" + v.key
-		outFilePath = outFilePath[0:len(outFilePath)-len(filepath.Ext(outFilePath))] + ".cut" + filepath.Ext(outFilePath)
-
-		// Create shell command for concatenating
-		cmd := exec.Command("ffmpeg",
-			"-f", "concat",
-			"-safe", "0",
-			"-i", concatFilePath,
-			"-codec", "copy",
-			"-reset_timestamps", "1",
-			"-y",
-			outFilePath,
-		)
-		// Set up error pipe
-		stderr, err = cmd.StderrPipe()
-		if err != nil {
-			rlog.Error("Cannot establish pipe for stderr: %v" + err.Error())
-			return err
-		}
-		// Start the command after having set up the pipes
-		if err = cmd.Start(); err != nil {
-			rlog.Error("Cannot start FFmpeg concat: %v" + err.Error())
-			return err
-		}
-		rlog.Trace(3, "Videos have been concatenated: ", outFilePath)
-
-		// read command's stderr line by line and store it in a errStr for further processing
-		cmdErr := bufio.NewScanner(stderr)
-		for cmdErr.Scan() {
-			errStr += fmt.Sprintf("%s\n", cmdErr.Text())
-		}
-		if err = cmd.Wait(); err != nil {
-			// In case command line execution returns error, content of stderr (now contained in
-			// errStr) is written into error file
-			errFilePath := cfg.logDirPath + "/" + v.key + errFileSuffixCut
-			if errFile, e := os.Create(errFilePath); e != nil {
-				rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
-			} else {
-				if _, e = errFile.WriteString(errStr); e != nil {
-					rlog.Error("Cannot write into \"" + errFilePath + "\": " + e.Error())
-				}
-				_ = errFile.Close()
-			}
-		}
-	}
-
-	// set progress to 100%
-	setPrgBar(v.key, prgActCut, 100)
-
-	return err
 }

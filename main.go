@@ -21,6 +21,9 @@ import (
 	"os"
 )
 
+// version is the program version. Variable is filled by make (see Makefile)
+var version string
+
 func main() {
 	if err := execute(); err != nil {
 		os.Exit(1)

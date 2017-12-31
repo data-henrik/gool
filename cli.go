@@ -34,7 +34,7 @@ import (
 // root command 'gool'
 var rootCmd = &cobra.Command{
 	Use:     "gool",
-	Version: version,
+	Version: "0.9.2",
 }
 
 // sub command 'list'
@@ -53,7 +53,7 @@ var cmdLst = &cobra.Command{
 		// ... set the number of processes to be used by gool
 		_ = runtime.GOMAXPROCS(cfg.numCpus)
 		// create video list
-		vl := make(vlist)
+		vl := make(videoList)
 		// read videos
 		if err := vl.read(args); err != nil {
 			fmt.Println(err.Error())
@@ -80,7 +80,7 @@ var cmdPrc = &cobra.Command{
 		// ... set the number of processes to be used by gool
 		_ = runtime.GOMAXPROCS(cfg.numCpus)
 		// create video list
-		vl := make(vlist)
+		vl := make(videoList)
 		// read videos
 		if err := vl.read(args); err != nil {
 			fmt.Println(err.Error())

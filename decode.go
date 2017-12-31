@@ -28,12 +28,13 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/romana/rlog"
 )
 
 // callOTRDecoder calls otrdecoder and handles the command line output.
-func callOTRDecoder(filePath string, key string) error {
+func (v *video) callOTRDecoder() error {
 	var (
 		err         error
 		errStr      string
@@ -54,7 +55,7 @@ func callOTRDecoder(filePath string, key string) error {
 	cmd := exec.Command(otrFilePath,
 		"-e", cfg.otrUsername,
 		"-p", cfg.otrPassword,
-		"-i", filePath,
+		"-i", v.filePath,
 		"-o", cfg.decDirPath)
 	// Set up output pipe
 	stdout, err := cmd.StdoutPipe()
@@ -86,11 +87,11 @@ func callOTRDecoder(filePath string, key string) error {
 			n, _ := strconv.Atoi(strings.TrimSuffix(cmdOut.Text(), "%"))
 			if (prg+n/3)-prgSet > 5 || prgSet == 0 {
 				prgSet = (prg + n) / 3
-				setPrgBar(key, prgActDec, prgSet)
+				v.setPrgBar(prgActDec, prgSet)
 			}
 		}
 	}
-	setPrgBar(key, prgActDec, 100)
+	v.setPrgBar(prgActDec, 100)
 
 	// read command's stderr line by line and store it in a errStr for further processing
 	cmdErr := bufio.NewScanner(stderr)
@@ -101,7 +102,7 @@ func callOTRDecoder(filePath string, key string) error {
 	if err = cmd.Wait(); err != nil {
 		// In case command line execution returns error, content of stderr (now contained in
 		// errStr) is written into error file
-		errFilePath := cfg.logDirPath + "/" + key + errFileSuffixDec
+		errFilePath := cfg.logDirPath + "/" + v.key + errFileSuffixDec
 		if errFile, e := os.Create(errFilePath); e != nil {
 			rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
 		} else {
@@ -113,4 +114,35 @@ func callOTRDecoder(filePath string, key string) error {
 	}
 
 	return err
+}
+
+// decode decodes an encoded video. Once decoding has been done,
+// a corresponding item is send to the channel r.
+func (v *video) decode(wg *sync.WaitGroup, r chan<- res) {
+	// Decrease wait group counter when function is finished
+	defer wg.Done()
+
+	// clean up stuff from former processing runs
+	if err := v.preProcessing(); err != nil {
+		r <- res{key: v.key, err: err}
+		return
+	}
+
+	// Call otrdecoder
+	errOTR := v.callOTRDecoder()
+
+	// Process videos based on error info from decoding go routine
+	if err := v.postProcessing(errOTR); err != nil {
+		fmt.Println(err.Error())
+		rlog.Error(err.Error())
+	}
+
+	// write error message to channel
+	if errOTR != nil {
+		r <- res{key: v.key, err: errOTR}
+		return
+	}
+
+	// Decoding successfully done: Write nil error into results channel
+	r <- res{key: v.key, err: nil}
 }

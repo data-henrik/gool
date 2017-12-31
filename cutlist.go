@@ -23,12 +23,14 @@ package main
 import (
 	"bytes"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/html/charset"
 
@@ -65,6 +67,44 @@ type clHeaders []clHeader
 func (clhs clHeaders) Len() int           { return len(clhs) }
 func (clhs clHeaders) Less(i, j int) bool { return clhs[i].score > clhs[j].score } // sort descending by score
 func (clhs clHeaders) Swap(i, j int)      { clhs[i], clhs[j] = clhs[j], clhs[i] }
+
+// fetchCutlist retrieves a cutlist from cutlist.at based on the key of the
+// video. Once the retrieval  is done, a corresponding item is send to the
+// channel r.
+func (v *video) fetchCutlist(wg *sync.WaitGroup, r chan<- res) {
+	// Decrease wait group counter when function is finished
+	defer wg.Done()
+
+	var ids []string
+
+	// create stop channel for progress bar
+	stop := make(chan struct{})
+
+	// start automatic progress bar which increments every 0.5s
+	go v.autoIncr(prgActCL, 500, stop)
+
+	// stop progress bar once fetchCutlists finalizes
+	defer func() { stop <- struct{}{} }()
+
+	// fetch cutlist headers from cutlist.at. If no lists could be retrieved: Print error
+	// message and return
+	if ids = fetchCutlistHeaders(v.key); len(ids) == 0 {
+		rlog.Trace(1, "No cutlist header could be fetched for "+v.key)
+		r <- res{key: v.key, err: fmt.Errorf("Keine Cutlists vorhanden")}
+		return
+	}
+
+	// retrieve cutlist from cutlist.at using the cutlist header list. If no cutlist could
+	// be retrieved: Print error message and return
+	if v.cl = fetchCutlistDetails(ids); v.cl == nil {
+		rlog.Trace(1, "No cutlist could be fetched for "+v.key)
+		r <- res{key: v.key, err: fmt.Errorf("Keine Cutlist konnte gelesen werden")}
+		return
+	}
+
+	// Cutlist fetched: Write nil error into results channel
+	r <- res{key: v.key, err: nil}
+}
 
 // fetchCutlist loops at a (sorted) cutlist header list and fetches the corresponding
 // cutlist. In case of success, it returns. In case of failure, it continues with
@@ -319,4 +359,14 @@ func fetchCutlistHeaders(key string) []string {
 	}
 
 	return ids
+}
+
+// hasCutlists checks if the cutlist server has cutlists for that video
+func (v *video) hasCutlists() bool {
+	// fetch cutlist headers from cutlist.at. If no lists could be retrieved: Log message and return
+	if len(fetchCutlistHeaders(v.key)) == 0 {
+		rlog.Trace(1, "No cutlist header could be fetched for "+v.key)
+		return false
+	}
+	return true
 }
