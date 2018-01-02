@@ -72,7 +72,7 @@ const (
 // Constants for error file suffices
 const (
 	errFileSuffixDec = ".decode.error"
-	errFileSuffixCut = ".cut.eror"
+	errFileSuffixCut = ".cut.error"
 )
 
 // Constants related to cli commands or programs

@@ -27,6 +27,7 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -81,12 +82,11 @@ func (v *video) callFFmpeg() error {
 	for i := 0; i < len(v.cl.segs); i++ {
 		// assemble filepath for output file
 		if len(v.cl.segs) == 1 {
-			outFilePath = cfg.cutDirPath + "/" + v.key
-			outFilePath = outFilePath[0:len(outFilePath)-len(filepath.Ext(outFilePath))] + ".cut" + filepath.Ext(outFilePath)
+			outFilePath = cfg.cutDirPath + "/" + v.key + ".cut" + path.Ext(v.filePath)
 		} else {
 			// in case different partial videos needs to be created temporarily,
 			// their name is set to [VIDEO.KEY].[COUNTER].extension
-			outFilePath = cfg.tmpDirPath + "/" + v.key + fmt.Sprintf(".%d", i) + filepath.Ext(v.key)
+			outFilePath = cfg.tmpDirPath + "/" + v.key + fmt.Sprintf(".%d", i) + path.Ext(v.filePath)
 		}
 
 		// write to file list for FFmpeg concatenate
@@ -98,8 +98,8 @@ func (v *video) callFFmpeg() error {
 		}
 
 		// adjust start and end of cut intervall to IDR frames
-		ts, _ := getIDRFrameTime(v.filePath, v.key, v.cl.segs[i].timeStart, directUp)
-		te, _ := getIDRFrameTime(v.filePath, v.key, v.cl.segs[i].timeStart+v.cl.segs[i].timeDur, directDown)
+		ts, _ := getIDRFrameTime(v, v.cl.segs[i].timeStart, directUp)
+		te, _ := getIDRFrameTime(v, v.cl.segs[i].timeStart+v.cl.segs[i].timeDur, directDown)
 
 		// Create shell command for decoding
 		cmd := exec.Command("ffmpeg",
@@ -134,7 +134,7 @@ func (v *video) callFFmpeg() error {
 		if err = cmd.Wait(); err != nil {
 			// In case command line execution returns error, content of stderr (now contained in
 			// errStr) is written into error file
-			errFilePath := cfg.logDirPath + "/" + v.key + errFileSuffixCut
+			errFilePath := cfg.logDirPath + "/" + v.key + path.Ext(v.filePath) + errFileSuffixCut
 			if errFile, e := os.Create(errFilePath); e != nil {
 				rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
 			} else {
@@ -153,8 +153,7 @@ func (v *video) callFFmpeg() error {
 	// assemble
 	if len(v.cl.segs) > 1 {
 		// assemble filepath of output file
-		outFilePath = cfg.cutDirPath + "/" + v.key
-		outFilePath = outFilePath[0:len(outFilePath)-len(filepath.Ext(outFilePath))] + ".cut" + filepath.Ext(outFilePath)
+		outFilePath = cfg.cutDirPath + "/" + v.key + ".cut" + path.Ext(v.filePath)
 
 		// Create shell command for concatenating
 		cmd := exec.Command("ffmpeg",
@@ -187,7 +186,7 @@ func (v *video) callFFmpeg() error {
 		if err = cmd.Wait(); err != nil {
 			// In case command line execution returns error, content of stderr (now contained in
 			// errStr) is written into error file
-			errFilePath := cfg.logDirPath + "/" + v.key + errFileSuffixCut
+			errFilePath := cfg.logDirPath + "/" + v.key + path.Ext(v.filePath) + errFileSuffixCut
 			if errFile, e := os.Create(errFilePath); e != nil {
 				rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
 			} else {
@@ -196,7 +195,77 @@ func (v *video) callFFmpeg() error {
 				}
 				_ = errFile.Close()
 			}
+		} else {
+			v.filePath = outFilePath
 		}
+	}
+
+	// set progress to 100%
+	v.setPrgBar(prgActCut, 100)
+
+	return err
+}
+
+func (v *video) callMKVmerge() error {
+	var (
+		err         error
+		errStr      string
+		splitStr    string
+		outFilePath string
+		stderr      io.ReadCloser
+	)
+
+	// create split string for MKVmerge
+	splitStr = "parts-frames:"
+	for i := 0; i < len(v.cl.segs); i++ {
+		if i > 0 {
+			splitStr += ",+"
+		}
+		splitStr += strconv.Itoa(v.cl.segs[i].frameStart) + "," + strconv.Itoa(v.cl.segs[i].frameDur+v.cl.segs[i].frameStart)
+	}
+
+	// set path of output file
+	outFilePath = cfg.cutDirPath + "/" + v.key + ".cut.mkv"
+
+	// Create shell command for decoding
+	cmd := exec.Command("mkvmerge",
+		"-o", outFilePath,
+		"--split", splitStr,
+		v.filePath,
+	)
+	fmt.Println(cmd)
+	// Set up error pipe
+	stderr, err = cmd.StderrPipe()
+	if err != nil {
+		rlog.Error("Cannot establish pipe for stderr: %v" + err.Error())
+		return err
+	}
+	// Start the command after having set up the pipes
+	if err = cmd.Start(); err != nil {
+		rlog.Error("Cannot start MKVmerge: %v" + err.Error())
+		return err
+	}
+	rlog.Trace(3, "Video has been cut with MKVmerge: ", cfg.cutDirPath+"/"+v.key+".mkv")
+
+	// read command's stderr line by line and store it in a errStr for further processing
+	cmdErr := bufio.NewScanner(stderr)
+	for cmdErr.Scan() {
+		errStr += fmt.Sprintf("%s\n", cmdErr.Text())
+	}
+	if err = cmd.Wait(); err != nil {
+		// In case command line execution returns error, content of stderr (now contained in
+		// errStr) is written into error file
+		errFilePath := cfg.logDirPath + "/" + v.key + path.Ext(v.filePath) + errFileSuffixCut
+		if errFile, e := os.Create(errFilePath); e != nil {
+			rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
+		} else {
+			if _, e = errFile.WriteString(errStr); e != nil {
+				rlog.Error("Cannot write into \"" + errFilePath + "\": " + e.Error())
+			}
+			_ = errFile.Close()
+		}
+	} else {
+		v.filePath = outFilePath
 	}
 
 	// set progress to 100%
@@ -228,6 +297,8 @@ const (
 // (b) a cutlist has been fetched. The fulfillment of both prerequisites
 // is indicated by two items in the channel r.
 func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
+	var errCut error
+
 	// Decrease wait group counter when function is finished
 	defer wg.Done()
 
@@ -246,9 +317,18 @@ func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
 		return
 	}
 
-	// Call FFmpeg to cut the video
-	errCut := v.callFFmpeg()
-
+	// otherwise call FFmpeg to cut the video
+	errCut = v.callFFmpeg()
+	/*
+		// if the cutlist is based on frames ...
+		if v.cl.frameBased {
+			// ... call MKVmerge to cut the video
+			errCut = v.callMKVmerge()
+		} else {
+			// ... otherwise call FFmpeg to cut the video
+			errCut = v.callFFmpeg()
+		}
+	*/
 	// Process videos based on error info from decoding go routine
 	if err := v.postProcessing(errCut); err != nil {
 		fmt.Println(err.Error())
@@ -258,7 +338,7 @@ func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
 
 // getIDRFrameTime receives a point in time for a given video and return the point in time
 // of the closest IDR frame. The frames of the video are retrieved by calling FFprobe.
-func getIDRFrameTime(filePath string, key string, timeOrig float64, direct int) (float64, error) {
+func getIDRFrameTime(v *video, timeOrig float64, direct int) (float64, error) {
 	// this function searches in [timeOrig-diff, timeOrig+diff] for IDR frame
 	const diff = 10.0
 
@@ -291,7 +371,7 @@ func getIDRFrameTime(filePath string, key string, timeOrig float64, direct int) 
 		"-show_frames",
 		"-pretty",
 		"-read_intervals", strconv.FormatFloat(ts, 'f', 6, 64)+"%"+strconv.FormatFloat(te, 'f', 6, 64),
-		filePath,
+		v.filePath,
 	)
 	// Set up output pipe
 	stdout, err := cmd.StdoutPipe()
@@ -362,7 +442,7 @@ func getIDRFrameTime(filePath string, key string, timeOrig float64, direct int) 
 	if err = cmd.Wait(); err != nil {
 		// In case command line execution returns error, content of stderr (now contained in
 		// errStr) is written into error file
-		errFilePath := cfg.logDirPath + "/" + key + errFileSuffixCut
+		errFilePath := cfg.logDirPath + "/" + v.key + path.Ext(v.filePath) + errFileSuffixCut
 		if errFile, e := os.Create(errFilePath); e != nil {
 			rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
 		} else {

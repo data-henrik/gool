@@ -17,3 +17,13 @@ $(GOMETALINTER):
 .PHONY: lint
 lint: $(GOMETALINTER)
 	gometalinter ./... --vendor
+
+install:
+	# copy binary to global bin directory
+	cp	${BINARY} /usr/bin/${BINARY}
+	# copy desktop file to global directory
+	cp resources/gool.desktop /usr/share/applications
+	# install mime type for ".otrkey files"
+	xdg-mime install --novendor resources/otrkey_mime.xml 
+	# set gool as default application
+	xdg-mime default gool.desktop application/x-onlinetvrecorder

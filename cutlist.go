@@ -27,6 +27,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -47,11 +48,13 @@ type seg struct {
 	frameDur   int     // duration (number of frames)
 }
 type cutlist struct {
-	id    string
-	app   string
-	ratio string
-	fps   float64
-	segs  []*seg // the list of cuts
+	id         string
+	app        string
+	ratio      string
+	fps        float64
+	timeBased  bool
+	frameBased bool
+	segs       []*seg // the list of cuts
 }
 
 // An array of clHeader is used to store the header information of the cutlists
@@ -88,7 +91,7 @@ func (v *video) fetchCutlist(wg *sync.WaitGroup, r chan<- res) {
 
 	// fetch cutlist headers from cutlist.at. If no lists could be retrieved: Print error
 	// message and return
-	if ids = fetchCutlistHeaders(v.key); len(ids) == 0 {
+	if ids = v.fetchCutlistHeaders(); len(ids) == 0 {
 		rlog.Trace(1, "No cutlist header could be fetched for "+v.key)
 		r <- res{key: v.key, err: fmt.Errorf("Keine Cutlists vorhanden")}
 		return
@@ -214,6 +217,7 @@ func fetchCutlistDetails(ids []string) *cutlist {
 			// get start time
 			if sec.HasKey(clKeyTimeStart) {
 				key, _ = sec.GetKey(clKeyTimeStart)
+				cl.timeBased = true
 				sg.timeStart, _ = strconv.ParseFloat(key.Value(), 64)
 			}
 			// get time duration
@@ -224,6 +228,7 @@ func fetchCutlistDetails(ids []string) *cutlist {
 			// get start frame
 			if sec.HasKey(clKeyFrameStart) {
 				key, _ = sec.GetKey(clKeyFrameStart)
+				cl.frameBased = true
 				sg.frameStart, _ = strconv.Atoi(key.Value())
 			}
 			// get frames duration
@@ -259,9 +264,9 @@ func fetchCutlistDetails(ids []string) *cutlist {
 }
 
 // fetchCutlistHeaders requests cutlist header information for the cutlist server
-// for the video with key key. It returns the information as list of clHeader, sorted
-// descending by score
-func fetchCutlistHeaders(key string) []string {
+// for the video. It returns the information as list of clHeader, sorted descending
+// by score
+func (v *video) fetchCutlistHeaders() []string {
 	var (
 		ids   []string
 		clhs  clHeaders
@@ -284,8 +289,10 @@ func fetchCutlistHeaders(key string) []string {
 	// map to store values of relevant element values for one cutlist
 	var clRelVals map[string]string
 
+	fmt.Println(cfg.clsURL + "getxml.php?name=" + v.key + path.Ext(v.filePath))
+
 	// fetch cutlist header from cutlist.at by calling URL
-	if resp, err = http.Get(cfg.clsURL + "getxml.php?name=" + key); err != nil {
+	if resp, err = http.Get(cfg.clsURL + "getxml.php?name=" + v.key + path.Ext(v.filePath)); err != nil {
 		// if no culist could be fetched: Nothing left to do, return
 		return ids
 	}
@@ -364,7 +371,7 @@ func fetchCutlistHeaders(key string) []string {
 // hasCutlists checks if the cutlist server has cutlists for that video
 func (v *video) hasCutlists() bool {
 	// fetch cutlist headers from cutlist.at. If no lists could be retrieved: Log message and return
-	if len(fetchCutlistHeaders(v.key)) == 0 {
+	if len(v.fetchCutlistHeaders()) == 0 {
 		rlog.Trace(1, "No cutlist header could be fetched for "+v.key)
 		return false
 	}

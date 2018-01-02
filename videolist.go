@@ -23,6 +23,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -42,6 +43,7 @@ func analyzeFile(fileName string) (string, string, error) {
 	var (
 		key    string
 		status string
+		fn     string
 		err    error
 	)
 
@@ -53,21 +55,24 @@ func analyzeFile(fileName string) (string, string, error) {
 	// check if video is encoded ...
 	if filepath.Ext(fileName) == ".otrkey" {
 		status = vidStatusEnc
-		key = strings.TrimSuffix(fileName, ".otrkey")
+		fn = strings.TrimSuffix(fileName, ".otrkey")
 	} else {
 		// ... if not: check if video is already cut ...
 		if strings.Contains(fileName, ".cut.") {
 			status = vidStatusCut
-			key = strings.Replace(fileName, "cut.", "", -1)
+			fn = strings.Replace(fileName, "cut.", "", -1)
 		} else {
 			// ... otherwise video must be decoded but uncut
 			status = vidStatusDec
-			key = fileName
+			fn = fileName
 		}
 	}
 	if status == "" {
-		return key, status, fmt.Errorf("Could not determine the status of %s", fileName)
+		return "", "", fmt.Errorf("Could not determine the status of %s", fileName)
 	}
+
+	// determine key (=filename without extension)
+	key = fn[:len(fn)-len(path.Ext(fn))]
 
 	return key, status, err
 }
@@ -205,6 +210,9 @@ func (vl videoList) read(patterns []string) error {
 			if info.IsDir() {
 				continue
 			}
+
+			// normalize filePath to absolute path
+			filePath, _ = filepath.Abs(filePath)
 
 			// determine filename
 			_, fileName = filepath.Split(filePath)

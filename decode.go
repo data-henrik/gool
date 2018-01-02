@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -102,7 +103,7 @@ func (v *video) callOTRDecoder() error {
 	if err = cmd.Wait(); err != nil {
 		// In case command line execution returns error, content of stderr (now contained in
 		// errStr) is written into error file
-		errFilePath := cfg.logDirPath + "/" + v.key + errFileSuffixDec
+		errFilePath := cfg.logDirPath + "/" + v.key + path.Ext(v.filePath) + errFileSuffixDec
 		if errFile, e := os.Create(errFilePath); e != nil {
 			rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
 		} else {

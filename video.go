@@ -63,7 +63,7 @@ type res struct {
 
 // Represents one video
 type video struct {
-	key      string // key [= file name without (a) suffix ".otrkey" and (b) sub string "cut."]
+	key      string // key [= file name without (a) suffix ".otrkey", (b) sub string "cut." and (c) file type (.avi, .mkv etc.)]
 	status   string // Whether a video is encoded, decoded or cut
 	res      string
 	filePath string
@@ -224,7 +224,7 @@ func (v *video) preProcessing() error {
 	var err error
 
 	// Delete old error file
-	errFilePath = cfg.logDirPath + "/" + v.key
+	errFilePath = cfg.logDirPath + "/" + v.key + path.Ext(v.filePath)
 	switch v.status {
 	case vidStatusEnc:
 		errFilePath += errFileSuffixDec
@@ -328,6 +328,11 @@ func (v *video) string() string {
 // in addtion the encoded version of the video is deleted.
 func (v *video) updateFromFile(status string, filePath string) {
 	var err error
+
+	// nothing to do if both video files are the same
+	if filePath == v.filePath {
+		return
+	}
 
 	if ((v.status == vidStatusEnc) && (status != vidStatusEnc)) || ((v.status == vidStatusDec) && (status == vidStatusCut)) {
 		v.status = status
