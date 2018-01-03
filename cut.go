@@ -195,8 +195,6 @@ func (v *video) callFFmpeg() error {
 				}
 				_ = errFile.Close()
 			}
-		} else {
-			v.filePath = outFilePath
 		}
 	}
 
@@ -215,13 +213,22 @@ func (v *video) callMKVmerge() error {
 		stderr      io.ReadCloser
 	)
 
+	// create stop channel for progress bar
+	stop := make(chan struct{})
+
+	// start automatic progress bar which increments every 0.5s
+	go v.autoIncr(prgActCut, 500, stop)
+
+	// stop progress bar once fetchCutlists finalizes
+	defer func() { stop <- struct{}{} }()
+
 	// create split string for MKVmerge
 	splitStr = "parts-frames:"
 	for i := 0; i < len(v.cl.segs); i++ {
 		if i > 0 {
 			splitStr += ",+"
 		}
-		splitStr += strconv.Itoa(v.cl.segs[i].frameStart) + "," + strconv.Itoa(v.cl.segs[i].frameDur+v.cl.segs[i].frameStart)
+		splitStr += strconv.Itoa(v.cl.segs[i].frameStart) + "-" + strconv.Itoa(v.cl.segs[i].frameDur+v.cl.segs[i].frameStart)
 	}
 
 	// set path of output file
@@ -233,7 +240,6 @@ func (v *video) callMKVmerge() error {
 		"--split", splitStr,
 		v.filePath,
 	)
-	fmt.Println(cmd)
 	// Set up error pipe
 	stderr, err = cmd.StderrPipe()
 	if err != nil {
@@ -245,7 +251,7 @@ func (v *video) callMKVmerge() error {
 		rlog.Error("Cannot start MKVmerge: %v" + err.Error())
 		return err
 	}
-	rlog.Trace(3, "Video has been cut with MKVmerge: ", cfg.cutDirPath+"/"+v.key+".mkv")
+	rlog.Trace(3, "Video has been cut with MKVmerge: ", outFilePath)
 
 	// read command's stderr line by line and store it in a errStr for further processing
 	cmdErr := bufio.NewScanner(stderr)
@@ -264,8 +270,6 @@ func (v *video) callMKVmerge() error {
 			}
 			_ = errFile.Close()
 		}
-	} else {
-		v.filePath = outFilePath
 	}
 
 	// set progress to 100%
@@ -317,18 +321,15 @@ func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
 		return
 	}
 
-	// otherwise call FFmpeg to cut the video
-	errCut = v.callFFmpeg()
-	/*
-		// if the cutlist is based on frames ...
-		if v.cl.frameBased {
-			// ... call MKVmerge to cut the video
-			errCut = v.callMKVmerge()
-		} else {
-			// ... otherwise call FFmpeg to cut the video
-			errCut = v.callFFmpeg()
-		}
-	*/
+	// if the cutlist is based on frames ...
+	if v.cl.frameBased {
+		// ... call MKVmerge to cut the video
+		errCut = v.callMKVmerge()
+	} else {
+		// ... otherwise call FFmpeg to cut the video
+		errCut = v.callFFmpeg()
+	}
+
 	// Process videos based on error info from decoding go routine
 	if err := v.postProcessing(errCut); err != nil {
 		fmt.Println(err.Error())

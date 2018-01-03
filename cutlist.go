@@ -155,7 +155,7 @@ func fetchCutlistDetails(ids []string) *cutlist {
 
 		// fetch cutlist from cutlist.at by calling URL
 		if resp, err = http.Get(cfg.clsURL + "getfile.php?id=" + id); err != nil {
-			// if no culist could be fetched: Nothing left to do, try next
+			// if no cutlist could be fetched: Nothing left to do, try next
 			continue
 		}
 		// read data
@@ -288,8 +288,6 @@ func (v *video) fetchCutlistHeaders() []string {
 	clRelNames := [...]string{clTagID, clTagRating}
 	// map to store values of relevant element values for one cutlist
 	var clRelVals map[string]string
-
-	fmt.Println(cfg.clsURL + "getxml.php?name=" + v.key + path.Ext(v.filePath))
 
 	// fetch cutlist header from cutlist.at by calling URL
 	if resp, err = http.Get(cfg.clsURL + "getxml.php?name=" + v.key + path.Ext(v.filePath)); err != nil {

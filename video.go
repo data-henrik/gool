@@ -185,12 +185,12 @@ func (v *video) postProcessing(vErr error) error {
 	// Set new status and adjust filePath
 	if v.status == vidStatusEnc {
 		v.status = vidStatusDec
-		v.filePath = cfg.decDirPath + "/" + v.key
+		v.filePath = cfg.decDirPath + "/" + v.key + path.Ext(v.filePath)
 		return nil
 	}
 	if v.status == vidStatusDec {
 		v.status = vidStatusCut
-		v.filePath = cfg.cutDirPath + "/" + v.key
+		v.filePath = cfg.cutDirPath + "/" + v.key + path.Ext(v.filePath)
 	}
 
 	return err
