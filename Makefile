@@ -1,11 +1,8 @@
 # This is how we want to name the binary output
 BINARY=gool
 
-# These are the values we want to pass for Version and BuildTime
-VERSION=0.9.5
-
 # Setup the -ldflags option for go build here, interpolate the variable values
-LDFLAGS=-ldflags "-X github.com/mipimipi/gool/main.Version=${VERSION} -X github.com/mipimipi/main.Build=`git rev-parse HEAD`"
+LDFLAGS=-ldflags "-X github.com/mipimipi/gool/main.Version=${VERSION}"
 
 all:
 	go build ${LDFLAGS} -o ${BINARY}
@@ -19,11 +16,6 @@ lint: $(GOMETALINTER)
 	gometalinter ./... --vendor
 
 install:
-	# copy binary to global bin directory
-	cp	${BINARY} /usr/bin/${BINARY}
-	# copy desktop file to global directory
-	cp resources/gool.desktop /usr/share/applications
-	# install mime type for ".otrkey files"
-	xdg-mime install --novendor resources/otrkey_mime.xml 
-	# set gool as default application
-	xdg-mime default gool.desktop application/x-onlinetvrecorder
+	install -Dm755 ${BINARY} $(DESTDIR)/usr/bin/${BINARY}
+	install -Dm644 resources/gool.desktop $(DESTDIR)/usr/share/applications/gool.desktop
+	install -Dm644 resources/otrkey_mime.xml $(DESTDIR)/usr/share/mime/packages/otrkey_mime.xml
