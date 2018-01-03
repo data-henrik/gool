@@ -40,7 +40,7 @@ ein. Falls Sie eine Fehlermeldung wegen des Fehlens von git bekommen, installier
 
 Führen Sie dann
 
-    cd $GOPATH/github.com/mipimipi/gool
+    cd $GOPATH/src/github.com/mipimipi/gool
     make
 
 aus, um das gool Binary zu erzeugen.
