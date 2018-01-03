@@ -61,7 +61,7 @@ Da gool die einzige Anwendung ist, die Dateien des neuen Mimetypes verarbeiten k
 
 ### Installation mit Paketverwaltungssoftware
 
-Für Arch Linux (und andere Distributionen, die Pakete aus dem Arch User Repository installieren können) gibt im AUR ein [Paket für gool](https://aur.archlinux.org/packages/gool-git/).
+Für Arch Linux (und andere Distributionen, die Pakete aus dem Arch User Repository installieren können) gibt es im AUR ein [Paket für gool](https://aur.archlinux.org/packages/gool-git/).
 
 ## Verwendung
 

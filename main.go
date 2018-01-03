@@ -22,7 +22,7 @@ import (
 )
 
 // Version stores version information. It's filled by make (see Makefile)
-var Version string // program version
+var Version string
 
 func main() {
 	if err := execute(); err != nil {

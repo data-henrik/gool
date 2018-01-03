@@ -1,8 +1,13 @@
 # This is how we want to name the binary output
 BINARY=gool
 
+# set VERSION if VERSION hasn't been passed from command line
+ifndef $(VERSION)
+	VERSION=0.9.5
+endif
+
 # Setup the -ldflags option for go build here, interpolate the variable values
-LDFLAGS=-ldflags "-X github.com/mipimipi/gool/main.Version=${VERSION}"
+LDFLAGS=-ldflags "-X main.Version=${VERSION}"
 
 all:
 	go build ${LDFLAGS} -o ${BINARY}
