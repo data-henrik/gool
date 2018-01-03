@@ -46,7 +46,7 @@ Voraussetzung für die Verwendung sind:
 
 * [OTR-Dekoder für Linux](http://www.onlinetvrecorder.com/downloads/otrdecoder-bin-linux-Ubuntu_8.04.2-x86_64-0.4.614.tar.bz2), welcher zum Dekodieren von Videos verwendet wird.
 
-* [MKVToolNix](https://mkvtoolnix.download/), welches zum Schneiden verwendet wird, wenn die Cutlist Frame-Angaben enthält.
+* [MKVToolNix](https://mkvtoolnix.download/), da MKVmerge zum Schneiden verwendet wird.
 
 gool wir über Unterkommandos gesteuert:
 
