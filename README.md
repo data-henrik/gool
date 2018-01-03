@@ -16,6 +16,10 @@ gool lädt automatisch Cutlists von [cutlist.at](http://cutlist.at) herunter
 
 Basierend auf den Cutlists schneidet gool Videos unter Verwendung des Tools [MKVmerge](https://mkvtoolnix.download/doc/mkvmerge.html)
 
+* **Automatisches Handling von otrkey-Dateien** *
+
+Es ist möglich, einen dedizierter Mimetype für otrkey-Dateien anzulegen und gool als Default-Anwendung dafür zu konfigurieren.
+
 ### Einfacher Aufruf
 
 Obwohl eine Kommandozeilen-Anwendung, lässt sich gool sehr einfach bedienen. Haben Sie z.B. gerade einige .otrkey-Dateien von Online TV Recorder heruntergeladen, so genügt der Aufruf `gool process ~/Downloads/*`, um alle Datein zu verarbeiten (d.h. dekodieren, Cutlists laden, schneiden).
@@ -26,7 +30,7 @@ gool kann mit einem einzigen Aufruf viele Videodateien bearbeiten. Die Arbeitssc
 
 ## Installation
 
-gool ist in der Sprache Go geschrieben und setzt die Installation von Go und den Go-Tools (unter Debian etwa sind dies die Pakete golang-go und golang-go.tools) voraus. Stellen Sie sicher, dass Sie die Umgebungsvariable `GOPATH` gesetzt haben. Es ist außerdem ratsam, den Pfad `$GOPATH/bin` in `PATH` aufzunehmen, damit Sie gool aus jedem Verzeichnis einfach aufrufen können.
+gool ist in der Sprache Go geschrieben und setzt die Installation von Go und den Go-Tools (unter Debian etwa sind dies die Pakete golang-go und golang-go.tools) voraus. Stellen Sie sicher, dass Sie die Umgebungsvariable `GOPATH` gesetzt haben. Es ist außerdem ratsam, den Pfad `$GOPATH/bin` in `PATH` aufzunehmen, damit Sie gool aus jedem Verzeichnis einfach aufrufen können. Stellen Sie außerdem sicher, dass die [xdg-utils](https://freedesktop.org/wiki/Software/xdg-utils/) installiert sind. Diese werden für die Erzeugung des Mimetaypes für otrkey-Dateien benötigt.
 
 Um gool mit allen Abhängigkeiten zu laden, geben Sie
 
@@ -34,11 +38,24 @@ Um gool mit allen Abhängigkeiten zu laden, geben Sie
 
 ein. Falls Sie eine Fehlermeldung wegen des Fehlens von git bekommen, installieren Sie git und führen Sie den o.g. Befehl noch einmal aus.
 
-Mit
+Führen Sie dann
 
-    go install github.com/mipimipi/gool
+    cd $GOPATH/github.com/mipimipi/gool
+    make
 
-installieren Sie gool.
+aus, um das gool Binary zu erzeugen.
+
+Ein anschließend als `root` ausgeführtes
+
+    make install
+
+* kopiert das gool Binary nach `/usr/bin`
+
+* erzeugt einen dedizerten Mimetype für otrkey-Dateien
+
+* erzeugt eine Desktop-Datei für gool
+
+* und setzt gool als Default-Anwendung für den Mimetype.
 
 ## Verwendung
 
