@@ -2,7 +2,7 @@
 BINARY=gool
 
 # These are the values we want to pass for Version and BuildTime
-VERSION=0.9.2
+VERSION=0.9.5
 
 # Setup the -ldflags option for go build here, interpolate the variable values
 LDFLAGS=-ldflags "-X .version=${VERSION}"

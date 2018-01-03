@@ -14,7 +14,7 @@ gool lädt automatisch Cutlists von [cutlist.at](http://cutlist.at) herunter
 
 * **Schneiden**
 
-Basierend auf den Cutlists schneidet gool Videos unter Verwendung des Tools [FFmpeg](https://ffmpeg.org/)
+Basierend auf den Cutlists schneidet gool Videos unter Verwendung des Tools [MKVmerge](https://mkvtoolnix.download/doc/mkvmerge.html)
 
 ### Einfacher Aufruf
 
@@ -46,7 +46,7 @@ Voraussetzung für die Verwendung sind:
 
 * [OTR-Dekoder für Linux](http://www.onlinetvrecorder.com/downloads/otrdecoder-bin-linux-Ubuntu_8.04.2-x86_64-0.4.614.tar.bz2), welcher zum Dekodieren von Videos verwendet wird.
 
-* [FFmpeg](https://ffmpeg.org/), welches zum Schneiden verwendet wird.
+* [MKVToolNix](https://mkvtoolnix.download/), welches zum Schneiden verwendet wird, wenn die Cutlist Frame-Angaben enthält.
 
 gool wir über Unterkommandos gesteuert:
 
@@ -69,4 +69,5 @@ Der Aufruf `gool list` listet alle Videodateien, die im Arbeitsverzeichnis und d
 ### Verarbeitung
 
 gool ist massenfähig, d.h. es kann bei einem Aufruf mehrere Videodateien verarbeiten. Die Verarbeitung findet nebenläufig statt. Z.B. werden für ein Video das Dekodieren sowie das Holen von Cutlisten parallel durchgeführt. Hierbei werden die Abhängigkeiten berücksichtigt, d.h. der Schneidevorgang wird erst gestartet, wenn das Video dekodiert ist und eine Cutlist geladen wurde.
-Verarbeitungsschritte verschiedener Video sind unabhängig voneinander und werden ebenfalls parallel ausgeführt. Während der Verarbeitung wird der Fortschritt angezeigt. Am Ende der Verarbeitung wird eine Zusammenfassung des Ergebnissen angezeigt.
+Verarbeitungsschritte verschiedener Video sind unabhängig voneinander und werden ebenfalls parallel ausgeführt. Während der Verarbeitung wird der Fortschritt angezeigt. Am Ende der Verarbeitung wird eine Zusammenfassung des Ergebnissen angezeigt. 
+Da gool [MKVmerge](https://mkvtoolnix.download/doc/mkvmerge.html) verwendet, um Videos zu schneiden, ist die resultierende Datei im [Matroska-Containerformat](https://de.wikipedia.org/wiki/Matroska).

@@ -125,8 +125,11 @@ func (vl videoList) process() {
 		rs []chan res
 	)
 
-	// remove tmp directory
-	defer func() { _ = os.RemoveAll(cfg.tmpDirPath) }()
+	/*
+		TODO: Delete?
+		// remove tmp directory
+		defer func() { _ = os.RemoveAll(cfg.tmpDirPath) }()
+	*/
 
 	// start progress tracking
 	start()

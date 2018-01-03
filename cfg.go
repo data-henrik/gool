@@ -83,12 +83,12 @@ const (
 
 // config contains the content read from the gool config file
 type config struct {
-	wrkDirPath    string // working dir for gool
-	encDirPath    string // dir for encoded videos
-	decDirPath    string // dir for decoded videos
-	cutDirPath    string // dir for cut videos
-	logDirPath    string // dir for log files
-	tmpDirPath    string // dir for temporary files
+	wrkDirPath string // working dir for gool
+	encDirPath string // dir for encoded videos
+	decDirPath string // dir for decoded videos
+	cutDirPath string // dir for cut videos
+	logDirPath string // dir for log files
+	//	tmpDirPath    string // dir for temporary files TODO: delete?
 	numCpus       int    // number of CPUs that gool is allowed to use
 	otrDecDirPath string // directory where otrdecoder is stored
 	otrUsername   string // username for OTR
@@ -229,9 +229,11 @@ func (cfg *config) getFromFile() error {
 	if cfg.logDirPath, err = getSubDirPath(subDirNameLog); err != nil {
 		return err
 	}
+	/* TODO: delete?
 	if cfg.tmpDirPath, err = getSubDirPath(subDirNameTmp); err != nil {
 		return err
 	}
+	*/
 
 	// Read NUM_CPUS_FOR_GOOL key. If it doesn't exist: Create it.
 	if key, err = getKey(cfgFile, sec, cfgKeyNumCPUs, getNumCPUsFromKeyboard, &hasChanged); err != nil {

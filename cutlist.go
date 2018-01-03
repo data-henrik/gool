@@ -27,7 +27,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -237,7 +236,7 @@ func fetchCutlistDetails(ids []string) *cutlist {
 				sg.frameDur, _ = strconv.Atoi(key.Value())
 			}
 
-			if (sg.timeStart == 0.0 && sg.timeDur == 0.0) || (sg.frameStart == 0 && sg.frameDur == 0) {
+			if (sg.timeStart == 0.0 && sg.timeDur == 0.0) && (sg.frameStart == 0 && sg.frameDur == 0) {
 				rlog.Warn("Cutlist ID=" + id + ": Cut " + clSectionCut + strconv.Itoa(i) + " does not have sufficient information")
 				cl.segs = cl.segs[:0]
 				break
@@ -289,8 +288,10 @@ func (v *video) fetchCutlistHeaders() []string {
 	// map to store values of relevant element values for one cutlist
 	var clRelVals map[string]string
 
+	rlog.Trace(3, "Call cutlist.at: ", cfg.clsURL+"getxml.php?name="+v.key)
+
 	// fetch cutlist header from cutlist.at by calling URL
-	if resp, err = http.Get(cfg.clsURL + "getxml.php?name=" + v.key + path.Ext(v.filePath)); err != nil {
+	if resp, err = http.Get(cfg.clsURL + "getxml.php?name=" + v.key); err != nil {
 		// if no culist could be fetched: Nothing left to do, return
 		return ids
 	}
