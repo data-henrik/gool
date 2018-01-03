@@ -21,8 +21,11 @@ import (
 	"os"
 )
 
-// version is the program version. Variable is filled by make (see Makefile)
-var version string
+// variables to store release information. They are filled by make (see Makefile)
+var (
+	Version string // program version
+	Build   string // build (= id of git commit)
+)
 
 func main() {
 	if err := execute(); err != nil {

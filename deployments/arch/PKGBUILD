@@ -1,39 +1,41 @@
 # Maintainer: Michael Picht <michael dot picht at ussenterprise dot de>
-# Contributor: Michael Picht <michael dot picht at ussenterprise dot de>
 
-pkgname=gool
-pkgver=0.9.2
+pkgname=gool-git
+pkgver=0.9.5
 pkgrel=1
-pkgdesc="Go - Online TV Recorder on Linux"
+pkgdesc='Go - Online TV Recorder on Linux'
 arch=('x86_64' 'i686')
 url="http://github.com/mipimipi/$pkgname/"
 license=('GPL3')
-depends('ffmpeg')
-makedepends=('go' 'xdg-utils')
-options=('!strip' '!emptydirs')
-source=("http://github.com/mipimipi/$pkgname/archive/v$pkgver.tar.gz")
-sha256sums=('bb830ba87f0a94d4bfa56b7a201db4ef714c79fea01de90ba19b30768c1901e2')
+depends=('mkvtoolnix-cli')
+makedepends=('go' 'git')
+source=("git://github.com/mipimipi/$pkgname.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$pkgname"
+  git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
 
 prepare() {
-  cd "$pkgname-$pkgver"
+  cd "$pkgname"
   export GOPATH=$(pwd)
-  go get -d -v
+  mkdir src
+  ln -s -r vendor/github.com src/github.com
+  ln -s -r vendor/golang.org src/golang.org
 }
 
 build() {
-  cd "$pkgname-$pkgver"
+  cd "$pkgname"
   export GOPATH=$(pwd)
   make
 }
 
 package() {
-  cd "$pkgname-$pkgver"
+  cd "$pkgname"
 
   install -Dm755 "$pkgname" "$pkgdir/usr/bin/$pkgname"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
-
-#  install -Dm755 "$pkgname-$pkgver" "$pkgdir/usr/bin/$pkgname"
-#  install -Dm644 "$srcdir/default.png" "$pkgdir/usr/share/pixmaps/default.png"
-#  install -Dm644 "$pkgname.1.gz" "$pkgdir/usr/share/man/man1/$pkgname.1.gz"
-#  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 resources/gool.desktop "$pkgdir/usr/share/applications/gool.desktop"
+  install -Dm644 resources/otrkey_mime.xml "$pkgdir/usr/share/mime/packages/otrkey_mime.xml"
 }

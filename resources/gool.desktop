@@ -43,3 +43,6 @@ Terminal=true
 
 # Describes the categories in which this entry should be shown
 Categories=Media;Video;
+
+# Supported mime types
+MimeType=application/x-onlinetvrecorder; 
