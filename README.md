@@ -16,13 +16,13 @@ gool lädt automatisch Cutlists von [cutlist.at](http://cutlist.at) herunter
 
 Basierend auf den Cutlists schneidet gool Videos unter Verwendung des Tools [MKVmerge](https://mkvtoolnix.download/doc/mkvmerge.html)
 
-* **Automatisches Handling von otrkey-Dateien** *
+* **Automatisches Handling von otrkey-Dateien**
 
 Es ist möglich, einen dedizierter Mimetype für otrkey-Dateien anzulegen und gool als Default-Anwendung dafür zu konfigurieren.
 
 ### Einfacher Aufruf
 
-Obwohl eine Kommandozeilen-Anwendung, lässt sich gool sehr einfach bedienen. Haben Sie z.B. gerade einige .otrkey-Dateien von Online TV Recorder heruntergeladen, so genügt der Aufruf `gool process ~/Downloads/*`, um alle Datein zu verarbeiten (d.h. dekodieren, Cutlists laden, schneiden).
+Obwohl eine Kommandozeilen-Anwendung, lässt sich gool sehr einfach bedienen. Haben Sie z.B. gerade einige .otrkey-Dateien von Online TV Recorder heruntergeladen, so genügt der Aufruf `gool process ~/Downloads/*`, um alle Datein zu verarbeiten (d.h. dekodieren, Cutlists laden, schneiden). Mit dem dedizerten Mimetype genügt sogar ein Doppelklick auf eine otrkey-Datei und diese mit gool zu dekodieren und das Video zu schneiden.
 
 ### Massen- und Parallelverarbeitung
 
@@ -82,6 +82,8 @@ gool setzt die Einrichtung eines Arbeitsverzeichnisses voraus (z.B. `~/Videos/OT
 ### Aufruf
 
 Der Aufruf `gool list` listet alle Videodateien, die im Arbeitsverzeichnis und den o.g. Unterverzeichnissen enthalten sind, samt ihres Verarbeitungsstatus. `gool process` stößt die Verarbeitung der Dateien an. In beiden Fällen können zusätzlich Dateipfade als Parameter übergeben werden. Diese Dateien werden dann ebenfalls durch gool verarbeitet. Ein Aufruf von `gool process ~/Downloads/*` würde also auch die Videos berücksichtigen, die sich im Downloads-Ordner befinden (etwa weil Sie gerade .otrkey-Dateien von Online TV Recorder heruntergeladen haben).
+
+Ist der Mimetype für otrkey-Datein eingerichtet, genügt ein Doppelklick auf solche eine Datei, um sie mit gool zu dekodieren und das Video zu schneiden.
 
 ### Verarbeitung
 
