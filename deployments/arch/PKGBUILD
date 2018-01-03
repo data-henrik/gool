@@ -34,9 +34,5 @@ build() {
 
 package() {
   cd "$_pkgname"
-
-  install -Dm755 "$_pkgname" "$pkgdir/usr/bin/_$pkgname"
-  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/_$pkgname/LICENSE"
-  install -Dm644 resources/gool.desktop "$pkgdir/usr/share/applications/gool.desktop"
-  install -Dm644 resources/otrkey_mime.xml "$pkgdir/usr/share/mime/packages/otrkey_mime.xml"
+  make DESTDIR=$pkgdir install
 }
