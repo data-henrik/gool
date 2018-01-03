@@ -6,7 +6,7 @@ gool (Go: Online TV Recorder on Linux) ist eine Kommandozeilen-Anwendung für Li
 
 * **Dekodieren**
 
-gool dekodiert .otrkey-Dateien unter Verwendung des [OTR-Dekoders für Linux](http://www.onlinetvrecorder.com/downloads/otrdecoder-bin-linux-Ubuntu_8.04.2-x86_64-0.4.614.tar.bz2)
+gool dekodiert otrkey-Dateien unter Verwendung des [OTR-Dekoders für Linux](http://www.onlinetvrecorder.com/downloads/otrdecoder-bin-linux-Ubuntu_8.04.2-x86_64-0.4.614.tar.bz2)
 
 * **Cutlists**
 
@@ -29,6 +29,8 @@ Obwohl eine Kommandozeilen-Anwendung, lässt sich gool sehr einfach bedienen. Ha
 gool kann mit einem einzigen Aufruf viele Videodateien bearbeiten. Die Arbeitsschritte werden dabei soweit möglich und unter Berücksichtigung der Abhängigkeiten parallel durchgeführt. Der Fortgang der Verarbeitung wird über Statusmeldungen und Forschrittsbalken angezeigt.
 
 ## Installation
+
+### Manuelle Installation
 
 gool ist in der Sprache Go geschrieben und setzt die Installation von Go und den Go-Tools (unter Debian etwa sind dies die Pakete golang-go und golang-go.tools) voraus. Stellen Sie sicher, dass Sie die Umgebungsvariable `GOPATH` gesetzt haben. Es ist außerdem ratsam, den Pfad `$GOPATH/bin` in `PATH` aufzunehmen, damit Sie gool aus jedem Verzeichnis einfach aufrufen können. Stellen Sie außerdem sicher, dass die [xdg-utils](https://freedesktop.org/wiki/Software/xdg-utils/) installiert sind. Diese werden für die Erzeugung des Mimetaypes für otrkey-Dateien benötigt.
 
@@ -53,9 +55,13 @@ Ein anschließend als `root` ausgeführtes
 
 * erzeugt einen dedizerten Mimetype für otrkey-Dateien
 
-* erzeugt eine Desktop-Datei für gool
+* erzeugt eine Desktop-Datei für gool.
 
-* und setzt gool als Default-Anwendung für den Mimetype.
+Da gool die einzige Anwendung ist, die Dateien des neuen Mimetypes verarbeiten kann, sollte gool nun automatisch bei Doppelklick auf eine otrkey-Datei aufgerufen werden.
+
+### Installation mit Paketverwaltungssoftware
+
+Für Arch Linux (und andere Distributionen, die Pakete aus dem Arch User Repository installieren können) gibt im AUR ein [Paket für gool](https://aur.archlinux.org/packages/gool-git/).
 
 ## Verwendung
 
