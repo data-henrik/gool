@@ -58,6 +58,7 @@ func (v *video) callOTRDecoder() error {
 		"-p", cfg.otrPassword,
 		"-i", v.filePath,
 		"-o", cfg.decDirPath)
+	rlog.Trace(3, cmd)
 	// Set up output pipe
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -133,7 +134,7 @@ func (v *video) decode(wg *sync.WaitGroup, r chan<- res) {
 	errOTR := v.callOTRDecoder()
 
 	// Process videos based on error info from decoding go routine
-	if err := v.postProcessing(errOTR); err != nil {
+	if err := v.postProcessing("", errOTR); err != nil {
 		fmt.Println(err.Error())
 		rlog.Error(err.Error())
 	}

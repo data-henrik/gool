@@ -64,6 +64,7 @@ type res struct {
 // Represents one video
 type video struct {
 	key      string // key [= file name without (a) suffix ".otrkey", (b) sub string "cut." and (c) file type (.avi, .mkv etc.)]
+	cf       string // container format of the video (e.g. "avi", "mkv")
 	status   string // Whether a video is encoded, decoded or cut
 	res      string
 	filePath string
@@ -157,9 +158,9 @@ func newVideo() *video {
 	return &v
 }
 
-// Takes result of a video processing step (decoding or cutting) and adjusts the
-// video status etc.
-func (v *video) postProcessing(vErr error) error {
+// Takes result of a video processing step (decoding or cutting) and the container
+// format of the resulting file and adjusts the data in struct video accordinlgy
+func (v *video) postProcessing(cf string, vErr error) error {
 	var err error
 
 	// In case of error: Set processing status to error
@@ -172,25 +173,40 @@ func (v *video) postProcessing(vErr error) error {
 	v.res = vidResultOK
 
 	// If cleanup is required: Delete old file
-	// TODO: Store uncutted file in "CutOriginal"
 	if cfg.doCleanUp {
-		if err = os.Remove(v.filePath); err != nil {
-			err = fmt.Errorf("%s couldn't be deleted: %v", v.filePath, err)
-			rlog.Warn(v.filePath + " couldn't be deleted: " + err.Error())
+		if v.status == vidStatusEnc {
+			if err = os.Remove(v.filePath); err != nil {
+				err = fmt.Errorf("%s couldn't be deleted: %v", v.filePath, err)
+				rlog.Warn(v.filePath + " couldn't be deleted: " + err.Error())
+			} else {
+				rlog.Trace(3, v.filePath+" has been deleted")
+			}
 		} else {
-			rlog.Trace(3, v.filePath+" has been deleted")
+			if v.status == vidStatusDec {
+				// move video file into correspondig sub dir
+				dstPath := cfg.arcDirPath + "/" + v.key + path.Ext(v.filePath)
+				if err = os.Rename(v.filePath, dstPath); err != nil {
+					err = fmt.Errorf("%s cannot be moved: %v", v.filePath, err)
+					rlog.Error(v.filePath + " cannot be moved to " + dstPath + ": " + err.Error())
+				}
+			}
 		}
+	}
+
+	// update container format (if necessary)
+	if cf != v.cf {
+		v.cf = cf
 	}
 
 	// Set new status and adjust filePath
 	if v.status == vidStatusEnc {
 		v.status = vidStatusDec
-		v.filePath = cfg.decDirPath + "/" + v.key + path.Ext(v.filePath)
+		v.filePath = cfg.decDirPath + "/" + v.key + "." + v.cf
 		return nil
 	}
 	if v.status == vidStatusDec {
 		v.status = vidStatusCut
-		v.filePath = cfg.cutDirPath + "/" + v.key + path.Ext(v.filePath)
+		v.filePath = cfg.cutDirPath + "/" + v.key + "." + v.cf
 	}
 
 	return err

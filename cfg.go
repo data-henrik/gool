@@ -65,6 +65,7 @@ const (
 	subDirNameEnc = "Encoded"
 	subDirNameDec = "Decoded"
 	subDirNameCut = "Cut"
+	subDirNameArc = "Decoded/Archive"
 	subDirNameLog = "log"
 	subDirNameTmp = "tmp"
 )
@@ -88,6 +89,7 @@ type config struct {
 	decDirPath string // dir for decoded videos
 	cutDirPath string // dir for cut videos
 	logDirPath string // dir for log files
+	arcDirPath string // dir for archived decoded videos (to be able to repeat the cut)
 	//	tmpDirPath    string // dir for temporary files TODO: delete?
 	numCpus       int    // number of CPUs that gool is allowed to use
 	otrDecDirPath string // directory where otrdecoder is stored
@@ -226,6 +228,9 @@ func (cfg *config) getFromFile() error {
 		return err
 	}
 	if cfg.cutDirPath, err = getSubDirPath(subDirNameCut); err != nil {
+		return err
+	}
+	if cfg.arcDirPath, err = getSubDirPath(subDirNameArc); err != nil {
 		return err
 	}
 	if cfg.logDirPath, err = getSubDirPath(subDirNameLog); err != nil {

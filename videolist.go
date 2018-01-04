@@ -37,11 +37,12 @@ type videoList map[string]*video
 
 // Takes a file path and - based on the filename - checks if it's an OTR video
 // or not. If it's no OTR video, an error is returned. If it's a video, the
-// function returns (a) the key and (b) the status - i.e. whether it's encoded,
-// decoded or cut
-func analyzeFile(fileName string) (string, string, error) {
+// function returns (a) the key, (b) the container format and (c) the status
+// - i.e. whether it's encoded, decoded or cut
+func analyzeFile(fileName string) (string, string, string, error) {
 	var (
 		key    string
+		cf     string
 		status string
 		fn     string
 		err    error
@@ -50,7 +51,7 @@ func analyzeFile(fileName string) (string, string, error) {
 	// check if fileName is an OTR file
 	if re, _ := regexp.Compile(`\w+_\d{2}\.\d{2}\.\d{2}_\d{2}-\d{2}_\w+`); !re.MatchString(fileName) {
 		rlog.Trace(2, "File "+fileName+" is no OTR File")
-		return key, status, fmt.Errorf("File %s is no OTR File", fileName)
+		return key, "", status, fmt.Errorf("File %s is no OTR File", fileName)
 	}
 	// check if video is encoded ...
 	if filepath.Ext(fileName) == ".otrkey" {
@@ -68,13 +69,16 @@ func analyzeFile(fileName string) (string, string, error) {
 		}
 	}
 	if status == "" {
-		return "", "", fmt.Errorf("Could not determine the status of %s", fileName)
+		return "", "", "", fmt.Errorf("Could not determine the status of %s", fileName)
 	}
+
+	// determine container format
+	cf = path.Ext(fn)[1:]
 
 	// determine key (=filename without extension)
 	key = fn[:len(fn)-len(path.Ext(fn))]
 
-	return key, status, err
+	return key, cf, status, err
 }
 
 // print prints the video list to stdout
@@ -194,6 +198,7 @@ func (vl videoList) read(patterns []string) error {
 		filePath  string
 		status    string
 		key       string
+		cf        string
 		v         *video
 	)
 
@@ -225,7 +230,7 @@ func (vl videoList) read(patterns []string) error {
 
 			// Update video list from filePath:
 			// Determine key and status of video
-			if key, status, err = analyzeFile(fileName); err != nil {
+			if key, cf, status, err = analyzeFile(fileName); err != nil {
 				continue
 			}
 			// print progress message
@@ -242,6 +247,7 @@ func (vl videoList) read(patterns []string) error {
 				// ... else: Create a new one and add it to the global video list
 				v = newVideo()
 				v.key = key
+				v.cf = cf
 				v.status = status
 				v.res = vidResultNone
 				v.filePath = filePath

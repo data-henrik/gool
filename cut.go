@@ -34,8 +34,9 @@ import (
 	"github.com/romana/rlog"
 )
 
-// callMKVmerge calls mkvmerge and handles the command line output.
-func (v *video) callMKVmerge() error {
+// callMKVmerge calls mkvmerge and handles the command line output. It return
+// the container format in case the container format has changed (otherwise "")
+func (v *video) callMKVmerge() (string, error) {
 	var (
 		err         error
 		errStr      string
@@ -88,12 +89,12 @@ func (v *video) callMKVmerge() error {
 	stderr, err = cmd.StderrPipe()
 	if err != nil {
 		rlog.Error("Cannot establish pipe for stderr: %v" + err.Error())
-		return err
+		return "", err
 	}
 	// Start the command after having set up the pipes
 	if err = cmd.Start(); err != nil {
 		rlog.Error("Cannot start MKVmerge: %v" + err.Error())
-		return err
+		return "", err
 	}
 	rlog.Trace(3, "Video has been cut with MKVmerge: ", outFilePath)
 
@@ -119,7 +120,7 @@ func (v *video) callMKVmerge() error {
 	// set progress to 100%
 	v.setPrgBar(prgActCut, 100)
 
-	return err
+	return "mkv", err
 }
 
 /*
@@ -143,8 +144,6 @@ func cleanTmpDir(key string) {
 // (b) a cutlist has been fetched. The fulfillment of both prerequisites
 // is indicated by two items in the channel r.
 func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
-	var errCut error
-
 	// Decrease wait group counter when function is finished
 	defer wg.Done()
 
@@ -164,17 +163,17 @@ func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
 	}
 
 	// call MKVmerge to cut the video
-	errCut = v.callMKVmerge()
+	cf, errCut := v.callMKVmerge()
 
 	// Process videos based on error info from decoding go routine
-	if err := v.postProcessing(errCut); err != nil {
+	if err := v.postProcessing(cf, errCut); err != nil {
 		fmt.Println(err.Error())
 		rlog.Error(err.Error())
 	}
 }
 
 // timeStr takes a time duration or point in time as floating point and
-// return a string in the format "HH:MM:SS.ssssss"
+// returns a string representation in the format "HH:MM:SS.ssssss"
 func timeStr(f float64) string {
 	// a is an aray of length 2: a[0] is time in full seconds, a[1] contains the sub second time
 	a := strings.Split(strconv.FormatFloat(f, 'f', 6, 64), ".")
