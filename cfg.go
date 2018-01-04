@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Michael Picht
+// Copyright (C) 2018 Michael Picht
 //
 // This file is part of gool.
 //
@@ -119,15 +119,15 @@ func checkDirPath(dir string, doCreate bool) error {
 			if doCreate {
 				rlog.Trace(1, dir+" doesn't exist: Create it")
 				if err = os.MkdirAll(dir, 0755); err != nil {
-					fmt.Printf("Das Verzeichnis %s kann nicht erzeugt werden: %v\n", dir, err)
+					fmt.Printf("%s cannot be created: %v\n", dir, err)
 				}
 			} else {
 				// ... otherwise: exit
 				rlog.Trace(1, dir+" doesn't exist: Exit")
-				fmt.Printf("Das Verzeichnis %s existiert nicht: %v\n", dir, err)
+				fmt.Printf("%s doesn't exist: %v\n", dir, err)
 			}
 		} else {
-			fmt.Printf("Fehler beim Zugriff auf das Verzeichnis %s: %v\n", dir, err)
+			fmt.Printf("Error while accessing %s: %v\n", dir, err)
 		}
 	}
 
@@ -141,9 +141,9 @@ func getCLSUrlFromKeyboard() (string, error) {
 		input string
 	)
 
-	fmt.Print("\nGeben Sie Ihr URL des Cutlist-Servers ein [http://cutlist.at/]: ")
+	fmt.Print("\nEnter the URL of the cutlist server [http://cutlist.at/]: ")
 	if _, err = fmt.Scanln(&input); err != nil {
-		return "", fmt.Errorf("Fehler bei der Eingabe der URL des Cutlist-Server: %v", err)
+		return "", fmt.Errorf(err.Error())
 	}
 	if input == "" {
 		// set default
@@ -280,12 +280,12 @@ func (cfg *config) getFromFile() error {
 	if hasChanged {
 		rlog.Trace(3, "Config has been changed and needs to be saved")
 		if err = cfgFile.SaveTo(cfgFilepath); err != nil {
-			return fmt.Errorf("Konfigurationsdatei %s kann nicht gesichert werden: %v", cfgFilepath, err)
+			return fmt.Errorf("Configuration file %s cannot be saved: %v", cfgFilepath, err)
 		}
 		rlog.Trace(3, "Config has been saved")
 		// Change file mode. As a password is stored in there, only the owner should be able to read it
 		if err = os.Chmod(cfgFilepath, 0600); err != nil {
-			return fmt.Errorf("chmod 0600 konnte für %s nicht ausgeführt werden: %v", cfgFilepath, err)
+			return fmt.Errorf("chmod 0600 could not be executed for %s: %v", cfgFilepath, err)
 		}
 		rlog.Trace(3, "Mode of config file changed to 0600")
 	}
@@ -328,7 +328,7 @@ func getKey(iniFile *ini.File, sec *ini.Section, keyName string, f getFromKeyboa
 	if val, err = f(); err != nil {
 		rlog.Trace(1, "Error during user input for key "+keyName+": "+err.Error())
 
-		return nil, fmt.Errorf("Fehler bei Benutzereingabe für %s: %v", keyName, err)
+		return nil, fmt.Errorf("Error during user entry for %s: %v", keyName, err)
 	}
 
 	// If key exists ...
@@ -338,7 +338,7 @@ func getKey(iniFile *ini.File, sec *ini.Section, keyName string, f getFromKeyboa
 	} else {
 		// ... otherwise create key and set value
 		if _, err = sec.NewKey(keyName, val); err != nil {
-			err = fmt.Errorf("Key %s kann nicht erzeugt werden: %v", keyName, err)
+			err = fmt.Errorf("Key %s cannot be created: %v", keyName, err)
 		}
 	}
 
@@ -351,7 +351,6 @@ func getKey(iniFile *ini.File, sec *ini.Section, keyName string, f getFromKeyboa
 func getNumCPUsFromKeyboard() (string, error) {
 	var (
 		maxCPUs = runtime.NumCPU()
-		numCPUs = 1
 		input   string
 		inputOK bool
 		err     error
@@ -364,26 +363,32 @@ func getNumCPUsFromKeyboard() (string, error) {
 
 	// Ask the user as long as the input is OK
 	for !inputOK {
-		fmt.Printf("\nWieviele CPUs dürfen von gool genutzt werden (1..%d)? ", maxCPUs)
+		fmt.Printf("\nHow many CPUs can be used by gool (1..%d) [%d]? ", maxCPUs, maxCPUs)
 		if _, err = fmt.Scanln(&input); err != nil {
-			fmt.Println("Fehler bei der Eingabe: " + err.Error())
+			fmt.Println(err.Error())
+			continue
+		}
+		// use default value if user input is empty
+		if input == "" {
+			input = strconv.Itoa(maxCPUs)
+			inputOK = true
 			continue
 		}
 		// check if input is a number
 		if re, _ := regexp.Compile(`\d+`); !re.MatchString(input) {
-			fmt.Printf("Geben Sie eine Zahl zwischen 1 und %d ein.\n", maxCPUs)
+			fmt.Printf("Enter a number between 1 and %d.\n", maxCPUs)
 			continue
 		}
-		numCPUs, _ = strconv.Atoi(input)
 		// check if input doesn't exceed max number of CPU's
+		numCPUs, _ := strconv.Atoi(input)
 		if (numCPUs < 1) || (numCPUs > maxCPUs) {
-			fmt.Printf("Geben Sie eine Zahl zwischen 1 und %d ein.\n", maxCPUs)
+			fmt.Printf("Enter a number between 1 and %d.\n", maxCPUs)
 			continue
 		}
 		inputOK = true
 	}
 
-	return strconv.Itoa(numCPUs), err
+	return input, err
 }
 
 // Asks the user to enter the path to the OTR decoder
@@ -396,9 +401,9 @@ func getOTRDecDirPathFromKeyboard() (string, error) {
 
 	// Ask the user as long as the input is OK
 	for !inputOK {
-		fmt.Print("\nGeben Sie den Pfad zum otrdecoder ein: ")
+		fmt.Print("\nEnter the path to otrdecoder command: ")
 		if _, err = fmt.Scanln(&otrDecDirPath); err != nil {
-			fmt.Println("Fehler bei der Eingabe: " + err.Error())
+			fmt.Println(err.Error())
 			continue
 		}
 		// Check if the OTR decoder directory is existing
@@ -411,10 +416,10 @@ func getOTRDecDirPathFromKeyboard() (string, error) {
 		if _, err = os.Stat(otrDecFilepath); err != nil {
 			if os.IsNotExist(err) {
 				rlog.Trace(1, otrDecDirPath+" doesn't contain otrdecoder, ask again")
-				fmt.Printf("%s enthält nicht otrdecoder: %v\n", otrDecDirPath, err)
+				fmt.Printf("%s doesn't contain otrdecoder: %v\n", otrDecDirPath, err)
 			} else {
 				rlog.Trace(1, "Could not access "+otrDecFilepath)
-				fmt.Printf("Auf %s konnte nicht zugegriffen werden: %v\n", otrDecFilepath, err)
+				fmt.Printf("Could not access %s: %v\n", otrDecFilepath, err)
 			}
 			continue
 		}
@@ -431,9 +436,9 @@ func getOTRPasswordFromKeyboard() (string, error) {
 		input string
 	)
 
-	fmt.Print("\nGeben Sie Ihr OTR-Password ein: ")
+	fmt.Print("\nEnter your OTR password: ")
 	if _, err = fmt.Scanln(&input); err != nil {
-		return "", fmt.Errorf("Fehler bei der Eingabe des OTR-Passwords: %v", err)
+		return "", fmt.Errorf(err.Error())
 	}
 
 	return input, err
@@ -446,9 +451,9 @@ func getOTRUsernameFromKeyboard() (string, error) {
 		input string
 	)
 
-	fmt.Print("\nGeben Sie Ihren OTR-Benutzernamen ein: ")
+	fmt.Print("\nEnter your OTR user name: ")
 	if _, err = fmt.Scanln(&input); err != nil {
-		return "", fmt.Errorf("Fehler bei der Eingabe des OTR-Benutzernamens: %v", err)
+		return "", fmt.Errorf(err.Error())
 	}
 
 	return input, err
@@ -471,7 +476,7 @@ func getSection(iniFile *ini.File, secName string, hasChanged *bool) (*ini.Secti
 		if sec, err = iniFile.NewSection(secName); err == nil {
 			*hasChanged = true
 		} else {
-			err = fmt.Errorf("Section %s kann nicht erzeugt werden: %v", secName, err)
+			err = fmt.Errorf("Section %s cannot be created: %v", secName, err)
 		}
 	}
 
@@ -498,9 +503,9 @@ func getWrkDirPathFromKeyboard() (string, error) {
 	)
 
 	for !inputOK {
-		fmt.Print("\nGeben Sie das Arbeitsverzeichnis für gool ein (falls es nicht existiert, wird es angelegt): ")
+		fmt.Print("\nEnter the working dir for gool (it'll be create if it doesn' exist): ")
 		if _, err = fmt.Scanln(&wrkDirPath); err != nil {
-			fmt.Println("Fehler bei der Eingabe: " + err.Error())
+			fmt.Println(err.Error())
 			continue
 		}
 		// Check if the working directory is existing. Create it (and its parents) if necessary

@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Michael Picht
+// Copyright (C) 2018 Michael Picht
 //
 // This file is part of gool (Online TV Recorder on Linux in Go).
 //
@@ -81,12 +81,15 @@ func analyzeFile(fileName string) (string, string, error) {
 func (vl videoList) print() {
 	// Check if there are videos at all ...
 	if len(vl) == 0 {
-		fmt.Printf("\nKeine Videos gefunden\n\n")
+		fmt.Printf("\nNo videos found :(\n\n")
 		return
 	}
 
+	// print message
+	fmt.Printf("\n\033[1m\033[34m:: Summary ...\033[22m\033[39m\n")
+
 	// ... if yes: Print list
-	fmt.Printf("\n\033[1m"+vidFormatStr+"\033[22m\n", "Video", "Status", "CL", "Resultat")
+	fmt.Printf(vidFormatStr+"\n", "Video", "Status", "CL", "Result")
 	fmt.Println("--------------------------------------------------------------------------------")
 	for _, v := range vl {
 		fmt.Println(v.string())
@@ -117,7 +120,7 @@ func (vl videoList) process() {
 	}
 
 	// print status message
-	fmt.Println("\n\033[1m:: Prozessiere Videos ...\033[22m")
+	fmt.Println("\n\033[1m\033[34m:: Process videos ...\033[22m\033[39m")
 
 	var (
 		wg sync.WaitGroup
@@ -143,7 +146,7 @@ func (vl videoList) process() {
 
 		// create channel for the communication:
 		// (1) decode method        -> cut method
-		// (2) fetch cutlist method -> cut method
+		// (2) load cutlist method -> cut method
 		r = make(chan res, 2)
 		rs = append(rs, r)
 
@@ -153,8 +156,8 @@ func (vl videoList) process() {
 		// Cut video in go routine
 		go v.cut(&wg, r)
 
-		// Fetch cutlist for video in go routine
-		go v.fetchCutlist(&wg, r)
+		// Load cutlist for video in go routine
+		go v.loadCutlist(&wg, r)
 
 		// if videos needs to be decoded ...
 		if v.status == vidStatusEnc {
@@ -195,7 +198,7 @@ func (vl videoList) read(patterns []string) error {
 	)
 
 	// print status message
-	fmt.Printf("\n\033[1m:: Lese Videodateien ein ...\033[22m\n")
+	fmt.Printf("\n\033[1m\033[34m:: Read video files ...\033[22m\033[39m\n")
 
 	// add working dir and the sub dirs for enc, dec and cut to the pattern list
 	patterns = append(patterns, cfg.wrkDirPath+"/*", cfg.encDirPath+"/*", cfg.decDirPath+"/*", cfg.cutDirPath+"/*")

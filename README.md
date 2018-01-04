@@ -1,98 +1,96 @@
 # gool
 
-gool (Go: Online TV Recorder on Linux) ist eine Kommandozeilen-Anwendung für Linux, mit der Filme, die von [Online TV Recorder](https://www.onlinetvrecorder.com/) aufgenommen und heruntergeladen wurden, dekodiert und geschnitten werden können.
+gool (Go: Online TV Recorder on Linux) is a command line application for Linux. It allows decoding and cutting of videos that have been recorded by [Online TV Recorder](https://www.onlinetvrecorder.com/).
 
 ## Features
 
-* **Dekodieren**
+* **Decoding**
 
-gool dekodiert otrkey-Dateien unter Verwendung des [OTR-Dekoders für Linux](http://www.onlinetvrecorder.com/downloads/otrdecoder-bin-linux-Ubuntu_8.04.2-x86_64-0.4.614.tar.bz2)
+gool decodes otrkey files by using [OTR Decoder for Linux](http://www.onlinetvrecorder.com/downloads/otrdecoder-bin-linux-Ubuntu_8.04.2-x86_64-0.4.614.tar.bz2)
 
 * **Cutlists**
 
-gool lädt automatisch Cutlists von [cutlist.at](http://cutlist.at) herunter
+gool automatically loads cutlists from [cutlist.at](http://cutlist.at)
 
-* **Schneiden**
+* **Cutting**
 
-Basierend auf den Cutlists schneidet gool Videos unter Verwendung des Tools [MKVmerge](https://mkvtoolnix.download/doc/mkvmerge.html)
+Based on the cutlists, gool cuts videos by using [MKVmerge](https://mkvtoolnix.download/doc/mkvmerge.html)
 
-* **Automatisches Handling von otrkey-Dateien**
+* **Automated handling of otrkey files**
 
-Es ist möglich, einen dedizierter Mimetype für otrkey-Dateien anzulegen und gool als Default-Anwendung dafür zu konfigurieren.
+It's possible to create a dedicated mime type for otrkey files. gool can be defined as default application for it.
 
-### Einfacher Aufruf
+### Simple usage
 
-Obwohl eine Kommandozeilen-Anwendung, lässt sich gool sehr einfach bedienen. Haben Sie z.B. gerade einige .otrkey-Dateien von Online TV Recorder heruntergeladen, so genügt der Aufruf `gool process ~/Downloads/*`, um alle Datein zu verarbeiten (d.h. dekodieren, Cutlists laden, schneiden). Mit dem dedizerten Mimetype genügt sogar ein Doppelklick auf eine otrkey-Datei und diese mit gool zu dekodieren und das Video zu schneiden.
+Though being a command line application, the usage of gool is quite simple. If, for instance, you have downloaded some otrkey files from Online TV Recorder, the command `gool process ~/Downloads/*` processes all files (i.e., the y are decoded, cutlists are loaded and they are cut). With the dedicated mime type, it's even simpler: A double click on an otrkey file starts gool.
 
-### Massen- und Parallelverarbeitung
+### Mass and parallel processing
 
-gool kann mit einem einzigen Aufruf viele Videodateien bearbeiten. Die Arbeitsschritte werden dabei soweit möglich und unter Berücksichtigung der Abhängigkeiten parallel durchgeführt. Der Fortgang der Verarbeitung wird über Statusmeldungen und Forschrittsbalken angezeigt.
+With one gool can process many video files. The different steps are executed in parallel as far as possible and by taking care of the dependencies. The progress is displayed as status messages and progress bars.
 
 ## Installation
 
-### Manuelle Installation
+### Manual installation
 
-gool ist in der Sprache Go geschrieben und setzt die Installation von Go und den Go-Tools (unter Debian etwa sind dies die Pakete golang-go und golang-go.tools) voraus. Stellen Sie sicher, dass Sie die Umgebungsvariable `GOPATH` gesetzt haben. Es ist außerdem ratsam, den Pfad `$GOPATH/bin` in `PATH` aufzunehmen, damit Sie gool aus jedem Verzeichnis einfach aufrufen können. Stellen Sie außerdem sicher, dass die [xdg-utils](https://freedesktop.org/wiki/Software/xdg-utils/) installiert sind. Diese werden für die Erzeugung des Mimetaypes für otrkey-Dateien benötigt.
+gool is written in Golang and thus requires the installation of Go with it's corresponding tools (in Debian these are the packages **golang-go** and **golang-go.tools**). Make sure that you've set the environment variable `GOPATH` accordingly. Make sure that **git** is installed.
 
-Um gool mit allen Abhängigkeiten zu laden, geben Sie
+To download gool and all dependencies, enter
 
     go get github.com/mipimipi/gool
 
-ein. Falls Sie eine Fehlermeldung wegen des Fehlens von git bekommen, installieren Sie git und führen Sie den o.g. Befehl noch einmal aus.
-
-Führen Sie dann
+After that, build gool by executing
 
     cd $GOPATH/src/github.com/mipimipi/gool
     make
 
-aus, um das gool Binary zu erzeugen.
-
-Ein anschließend als `root` ausgeführtes
+Finally, execute
 
     make install
 
-* kopiert das gool Binary nach `/usr/bin`
+as `root` to
 
-* erzeugt einen dedizerten Mimetype für otrkey-Dateien
+* copy the gool binary to `/usr/bin`
 
-* erzeugt eine Desktop-Datei für gool.
+* create a dedicated mime type for otrkey files
 
-Da gool die einzige Anwendung ist, die Dateien des neuen Mimetypes verarbeiten kann, sollte gool nun automatisch bei Doppelklick auf eine otrkey-Datei aufgerufen werden.
+* create a desktop file for gool.
 
-### Installation mit Paketverwaltungssoftware
+Since gool is the only application that can process files of the new mime type, it should now be called automatically if you double click on an otrkey file.
 
-Für Arch Linux (und andere Distributionen, die Pakete aus dem Arch User Repository installieren können) gibt es im AUR ein [Paket für gool](https://aur.archlinux.org/packages/gool-git/).
+### Installation with package managers
 
-## Verwendung
+For Arch Linux (and other Linux ditros, that can install packages from the Arch User Repository) there's a [gool package in AUR](https://aur.archlinux.org/packages/gool-git/).
 
-Voraussetzung für die Verwendung sind:
+## Usage
 
-* [OTR-Dekoder für Linux](http://www.onlinetvrecorder.com/downloads/otrdecoder-bin-linux-Ubuntu_8.04.2-x86_64-0.4.614.tar.bz2), welcher zum Dekodieren von Videos verwendet wird.
+Prerequistes:
 
-* [MKVToolNix](https://mkvtoolnix.download/), da MKVmerge zum Schneiden verwendet wird.
+* [OTR Decoder for Linux](http://www.onlinetvrecorder.com/downloads/otrdecoder-bin-linux-Ubuntu_8.04.2-x86_64-0.4.614.tar.bz2) is required to decode videos.
 
-gool wir über Unterkommandos gesteuert:
+* [MKVToolNix](https://mkvtoolnix.download/) is required to cut videos.
 
-        help     # Hilfe
-        list     # Listet die gefundenen Videodateien samt ihres Status
-        process  # Verarbeitet die gefundenen Videodateien (d.h. dekodiert und schneidet sie)
+gool is controlled via sub commands:
 
-### Konfiguration
+        help     # help
+        list     # Lists the retrieved videos files and its status
+        process  # Processed the retrieved (e.g. decodes and cuts them)
 
-Beim ersten Aufruf fragt gool einige Konfigurationangaben ab, die in der Datei `gool.conf` abgespeichert werden. `gool.conf` befindet sich im benutzerspezifischen Konfigurationsverzeichnis Ihres Betriebssystems (also etwa in `~/.config`) und kann mit einem Texteditor geändert werden.
+### Configuration
 
-### Verzeichnis
+During the first call gool requires some inputs for configuraion. This data is stored `gool.conf`. This configuration file is located in the user specific configuration directory of your operation system (e.g.`~/.config`). It can be changed with a text editor.
 
-gool setzt die Einrichtung eines Arbeitsverzeichnisses voraus (z.B. `~/Videos/OTR`). In diesem Verzeichnis werden die Unterverzeichnisse `Encoded`, `Decoded` und `Cut` erzeugt, die die Videodateien in den entsprechenden Bearbeitungsschritten aufnehmen. `Cut` enthält beispielsweise die fertig geschnittenen Videodateien, `Decoded` die dekodierten aber ungeschnittenen Dateien (z.B. kann es sein, dass eine Videodatei zwar dekodiert aber nicht geschnitten werden konnte, da noch keine Cutlist vorhanden ist). Darüber hinaus wird das Unterverzeichnis `log` angelegt, in welchem im Fehlerfall Log-Dateien abgelegt werden.
+### Directories
 
-### Aufruf
+gool requires a working directory (e.g. `~/Videos/OTR`). In this directory, the sub directories `Encoded`, `Decoded` and `Cut` are created. They'll store the video files depending on its processing status. `Cut`, for instance, contains the video files that have been cut, `Decoded` the decoded and uncut files (it can happen that a video can be decoded but cannot be cut because cutlists donÄt exist yet). Moreover, a sub directory `log` is being created. It contains log files if errors occurred.
 
-Der Aufruf `gool list` listet alle Videodateien, die im Arbeitsverzeichnis und den o.g. Unterverzeichnissen enthalten sind, samt ihres Verarbeitungsstatus. `gool process` stößt die Verarbeitung der Dateien an. In beiden Fällen können zusätzlich Dateipfade als Parameter übergeben werden. Diese Dateien werden dann ebenfalls durch gool verarbeitet. Ein Aufruf von `gool process ~/Downloads/*` würde also auch die Videos berücksichtigen, die sich im Downloads-Ordner befinden (etwa weil Sie gerade .otrkey-Dateien von Online TV Recorder heruntergeladen haben).
+### Call
 
-Ist der Mimetype für otrkey-Datein eingerichtet, genügt ein Doppelklick auf solche eine Datei, um sie mit gool zu dekodieren und das Video zu schneiden.
+The command `gool list` lists all video files, that are stored in the working directory or its sub directories, incl. its processing status. `gool process` starts processing of videos. In both cases, additional file paths can be passed to the command. These files are considered by gool as well. The command `gool process ~/Downloads/*` would process videos located in the downloads folder (in addition to the videos stored in the working directoy and its sub directories).
 
-### Verarbeitung
+If the mime type for otrkey files has been created, a double click on such a file is sufficient to decode an cut it with gool.
 
-gool ist massenfähig, d.h. es kann bei einem Aufruf mehrere Videodateien verarbeiten. Die Verarbeitung findet nebenläufig statt. Z.B. werden für ein Video das Dekodieren sowie das Holen von Cutlisten parallel durchgeführt. Hierbei werden die Abhängigkeiten berücksichtigt, d.h. der Schneidevorgang wird erst gestartet, wenn das Video dekodiert ist und eine Cutlist geladen wurde.
-Verarbeitungsschritte verschiedener Video sind unabhängig voneinander und werden ebenfalls parallel ausgeführt. Während der Verarbeitung wird der Fortschritt angezeigt. Am Ende der Verarbeitung wird eine Zusammenfassung des Ergebnissen angezeigt. 
-Da gool [MKVmerge](https://mkvtoolnix.download/doc/mkvmerge.html) verwendet, um Videos zu schneiden, ist die resultierende Datei im [Matroska-Containerformat](https://de.wikipedia.org/wiki/Matroska).
+### Processing
+
+gool is capable to process many videos in one call. Processing happens in a concurrent way. For one video, decoding and fetching of cutlists is done parallel. Dependencies are being taken care of. I.e. the cutting step will only be started after the decoding and the loading of cutlists has been done. Processing steps of different videos are independend of each other and thus are executed in parallel as well. During processing, progress is displayed. After processing has ended, the result will be shown as summary.
+
+Since gool uses [MKVmerge](https://mkvtoolnix.download/doc/mkvmerge.html) to cut videos, the resulting files has the [Matroska container format](https://de.wikipedia.org/wiki/Matroska) (.mkv).

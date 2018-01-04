@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Michael Picht
+// Copyright (C) 2018 Michael Picht
 //
 // This file is part of gool.
 //
@@ -28,8 +28,17 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/mipimipi/cobra"
+	"github.com/spf13/cobra"
 )
+
+var preamble = `gool (Go - Online TV Recorder on Linux) ` + Version + `
+Copyright (C) 2018 Michael Picht <https://github.com/mipimipi/gool>
+`
+
+var helpTemplate = preamble + `
+{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
+
+{{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 
 // root command 'gool'
 var rootCmd = &cobra.Command{
@@ -39,12 +48,13 @@ var rootCmd = &cobra.Command{
 
 // sub command 'list'
 var cmdLst = &cobra.Command{
-	Use:   `list [Dateien]`,
-	Short: `Liste Videos`,
-	Long:  `Listet Videos, inkl. ihres Status ("ENC": verschlüsselt, "DEC": entschlüsselt, "CUT: geschnittet). Außerdem wird angezeigt, ob Schneidelisten (Cutlists: Spalte "CL") existieren. Die Videos werden nicht bearbeitet.`,
+	Use:   `list [files]`,
+	Short: `List videos`,
+	Long:  `List videos, incl. status ("ENC": encoded, "DEC": decoded but uncut, "CUT: cut). In addition, it's shown whether cutlists exist or not (column "CL"). Videos will not be processed.`,
 	DisableFlagsInUseLine: true,
 	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf(preamble)
 		// Read configuration and ...
 		if err := cfg.getFromFile(); err != nil {
 			fmt.Println(err.Error())
@@ -66,12 +76,13 @@ var cmdLst = &cobra.Command{
 
 // sub command 'process'
 var cmdPrc = &cobra.Command{
-	Use:   `process [Dateien]`,
-	Short: `Bearbeite Videos`,
-	Long:  `Bearbeitet Videos (d.h. Videos werden - je nach Status - entschlüsselt und geschnitten. Ferner werden - als Voraussetzung damit Videos geschnitten werden können - Schneidelisten beschafft). Am Ende wird eine Zusammenfassung der Bearbeitung angezeigt.`,
+	Use:   `process [files]`,
+	Short: `process videos`,
+	Long:  `process videos (i.e. videos are decoded and cut - depending on its status. As prerequisite for cutting videos, cutlists will be loaded). Finally, a summary is displayed.`,
 	DisableFlagsInUseLine: true,
 	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf(preamble)
 		// Read configuration and ...
 		if err := cfg.getFromFile(); err != nil {
 			fmt.Println(err.Error())
@@ -94,6 +105,11 @@ var cmdPrc = &cobra.Command{
 }
 
 func init() {
+	// set custom help template
+	rootCmd.SetHelpTemplate(helpTemplate)
+	cmdLst.SetHelpTemplate(helpTemplate)
+	cmdPrc.SetHelpTemplate(helpTemplate)
+
 	// build up command structure: 'list' and 'process' are sub commands of 'gool')
 	rootCmd.AddCommand(cmdLst, cmdPrc)
 }

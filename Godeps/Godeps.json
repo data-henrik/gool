@@ -19,13 +19,13 @@
 			"Rev": "6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c"
 		},
 		{
-			"ImportPath": "github.com/mipimipi/cobra",
-			"Comment": "v0.0.1-22-g82e7de0",
-			"Rev": "82e7de009559e34bb01ba3e878d9dcd9c17f60bd"
-		},
-		{
 			"ImportPath": "github.com/romana/rlog",
 			"Rev": "f018bc92e7d71f27c04e04cbf008860416c21d01"
+		},
+		{
+			"ImportPath": "github.com/spf13/cobra",
+			"Comment": "v0.0.1-19-gccaecb1",
+			"Rev": "ccaecb155a2177302cb56cae929251a256d0f646"
 		},
 		{
 			"ImportPath": "github.com/spf13/pflag",

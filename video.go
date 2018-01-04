@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Michael Picht
+// Copyright (C) 2018 Michael Picht
 //
 // This file is part of gool (Online TV Recorder on Linux in Go).
 //
@@ -42,16 +42,16 @@ const (
 
 // Constants for video processing status
 const (
-	vidResultOK   = "ERFOLG" // everything OK
-	vidResultErr  = "FEHLER" // error
-	vidResultNone = ""       // no result yet
+	vidResultOK   = "SUCCESS" // everything OK
+	vidResultErr  = "ERROR"   // error
+	vidResultNone = "NONE"    // no result yet
 )
 
 // Constants for printing video information
 const (
-	vidPrtKeyLen    = 60 // key length
+	vidPrtKeyLen    = 59 // key length
 	vidPrtCLLen     = 2  // length of cutlist existence indicator
-	vidPrtStatusLen = 6  // Status length
+	vidPrtStatusLen = 7  // Status length
 	vidPrtResLen    = 8  // result length
 )
 
@@ -68,7 +68,7 @@ type video struct {
 	res      string
 	filePath string
 	cl       *cutlist         // cutlists
-	pbs      map[int]*mpb.Bar // progress bars (key is action, like "decode", "cut", "fetch cutlist")
+	pbs      map[int]*mpb.Bar // progress bars (key is action, like "decode", "cut", "load cutlist")
 }
 
 // format str for listing videos
@@ -77,7 +77,7 @@ var vidFormatStr = "%-" + strconv.Itoa(vidPrtKeyLen) + "s %-" + strconv.Itoa(vid
 // constants to indicate actions
 const (
 	prgActDec = iota // action "decode"
-	prgActCL         // action "fetch cutlist"
+	prgActCL         // action "load cutlist"
 	prgActCut        // action "cut"
 )
 
@@ -175,7 +175,7 @@ func (v *video) postProcessing(vErr error) error {
 	// TODO: Store uncutted file in "CutOriginal"
 	if cfg.doCleanUp {
 		if err = os.Remove(v.filePath); err != nil {
-			err = fmt.Errorf("%s konnte nicht gelöscht werden: %v", v.filePath, err)
+			err = fmt.Errorf("%s couldn't be deleted: %v", v.filePath, err)
 			rlog.Warn(v.filePath + " couldn't be deleted: " + err.Error())
 		} else {
 			rlog.Trace(3, v.filePath+" has been deleted")
@@ -201,7 +201,7 @@ func (v *video) prependStr(act int) string {
 	var key string
 
 	// define strings for the corresponsing actions
-	actStr := [3]string{"Dekodiere", "Hole Cutlist", "Schneide"}
+	actStr := [3]string{"Decode", "Load cutlist", "Cut"}
 
 	// adjust key length for printing
 	if len(v.key) > prgKeyLen {
@@ -250,7 +250,7 @@ func (v *video) preProcessing() error {
 	if v.filePath != dstPath {
 		// move video file into correspondig sub dir
 		if err = os.Rename(srcDir+fileName, dstPath); err != nil {
-			err = fmt.Errorf("File %s kann nicht verschoben werden: %v", fileName, err)
+			err = fmt.Errorf("%s cannot be moved: %v", fileName, err)
 			rlog.Error(v.filePath + " cannot be moved to " + dstPath + ": " + err.Error())
 		}
 		// adjust file path in video object accordingly
@@ -341,7 +341,7 @@ func (v *video) updateFromFile(status string, filePath string) {
 		// if clean up is required: Delete file
 		if cfg.doCleanUp {
 			if err = os.Remove(filePath); err != nil {
-				err = fmt.Errorf("%s konnte nicht gelöscht werden: %v", filePath, err)
+				err = fmt.Errorf("%s couldn't be deleted: %v", filePath, err)
 				rlog.Warn(filePath + " couldn't be deleted: " + err.Error())
 			} else {
 				rlog.Trace(3, v.filePath+" has been deleted")

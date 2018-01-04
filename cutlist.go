@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Michael Picht
+// Copyright (C) 2018 Michael Picht
 //
 // This file is part of gool (Online TV Recorder on Linux in Go).
 //
@@ -65,15 +65,25 @@ type clHeader struct {
 }
 type clHeaders []clHeader
 
-// implement sort interface
+// implement sort interface for cutlist headers
 func (clhs clHeaders) Len() int           { return len(clhs) }
 func (clhs clHeaders) Less(i, j int) bool { return clhs[i].score > clhs[j].score } // sort descending by score
 func (clhs clHeaders) Swap(i, j int)      { clhs[i], clhs[j] = clhs[j], clhs[i] }
 
-// fetchCutlist retrieves a cutlist from cutlist.at based on the key of the
+// hasCutlists checks if the cutlist server has cutlists for that video
+func (v *video) hasCutlists() bool {
+	// load cutlist headers from cutlist.at. If no lists could be retrieved: Log message and return
+	if len(v.loadCutlistHeaders()) == 0 {
+		rlog.Trace(1, "No cutlist header could be fetched for "+v.key)
+		return false
+	}
+	return true
+}
+
+// loadCutlist retrieves a cutlist from cutlist.at based on the key of the
 // video. Once the retrieval  is done, a corresponding item is send to the
 // channel r.
-func (v *video) fetchCutlist(wg *sync.WaitGroup, r chan<- res) {
+func (v *video) loadCutlist(wg *sync.WaitGroup, r chan<- res) {
 	// Decrease wait group counter when function is finished
 	defer wg.Done()
 
@@ -88,19 +98,19 @@ func (v *video) fetchCutlist(wg *sync.WaitGroup, r chan<- res) {
 	// stop progress bar once fetchCutlists finalizes
 	defer func() { stop <- struct{}{} }()
 
-	// fetch cutlist headers from cutlist.at. If no lists could be retrieved: Print error
+	// load cutlist headers from cutlist.at. If no lists could be retrieved: Print error
 	// message and return
-	if ids = v.fetchCutlistHeaders(); len(ids) == 0 {
+	if ids = v.loadCutlistHeaders(); len(ids) == 0 {
 		rlog.Trace(1, "No cutlist header could be fetched for "+v.key)
-		r <- res{key: v.key, err: fmt.Errorf("Keine Cutlists vorhanden")}
+		r <- res{key: v.key, err: fmt.Errorf("No cutlist found")}
 		return
 	}
 
 	// retrieve cutlist from cutlist.at using the cutlist header list. If no cutlist could
 	// be retrieved: Print error message and return
-	if v.cl = fetchCutlistDetails(ids); v.cl == nil {
+	if v.cl = loadCutlistDetails(ids); v.cl == nil {
 		rlog.Trace(1, "No cutlist could be fetched for "+v.key)
-		r <- res{key: v.key, err: fmt.Errorf("Keine Cutlist konnte gelesen werden")}
+		r <- res{key: v.key, err: fmt.Errorf("No cutlists cut be fetched")}
 		return
 	}
 
@@ -108,10 +118,10 @@ func (v *video) fetchCutlist(wg *sync.WaitGroup, r chan<- res) {
 	r <- res{key: v.key, err: nil}
 }
 
-// fetchCutlist loops at a (sorted) cutlist header list and fetches the corresponding
+// loadCutlist loops at a (sorted) cutlist header list and fetches the corresponding
 // cutlist. In case of success, it returns. In case of failure, it continues with
 // the next entry of the list
-func fetchCutlistDetails(ids []string) *cutlist {
+func loadCutlistDetails(ids []string) *cutlist {
 
 	// constants for cl INI file sections and keys
 	const (
@@ -152,7 +162,7 @@ func fetchCutlistDetails(ids []string) *cutlist {
 		cl = new(cutlist)
 		cl.id = id
 
-		// fetch cutlist from cutlist.at by calling URL
+		// load cutlist from cutlist.at by calling URL
 		if resp, err = http.Get(cfg.clsURL + "getfile.php?id=" + id); err != nil {
 			// if no cutlist could be fetched: Nothing left to do, try next
 			continue
@@ -262,10 +272,10 @@ func fetchCutlistDetails(ids []string) *cutlist {
 	return nil
 }
 
-// fetchCutlistHeaders requests cutlist header information for the cutlist server
+// loadCutlistHeaders requests cutlist header information for the cutlist server
 // for the video. It returns the information as list of clHeader, sorted descending
 // by score
-func (v *video) fetchCutlistHeaders() []string {
+func (v *video) loadCutlistHeaders() []string {
 	var (
 		ids   []string
 		clhs  clHeaders
@@ -290,7 +300,7 @@ func (v *video) fetchCutlistHeaders() []string {
 
 	rlog.Trace(3, "Call cutlist.at: ", cfg.clsURL+"getxml.php?name="+v.key)
 
-	// fetch cutlist header from cutlist.at by calling URL
+	// load cutlist header from cutlist.at by calling URL
 	if resp, err = http.Get(cfg.clsURL + "getxml.php?name=" + v.key); err != nil {
 		// if no culist could be fetched: Nothing left to do, return
 		return ids
@@ -365,14 +375,4 @@ func (v *video) fetchCutlistHeaders() []string {
 	}
 
 	return ids
-}
-
-// hasCutlists checks if the cutlist server has cutlists for that video
-func (v *video) hasCutlists() bool {
-	// fetch cutlist headers from cutlist.at. If no lists could be retrieved: Log message and return
-	if len(v.fetchCutlistHeaders()) == 0 {
-		rlog.Trace(1, "No cutlist header could be fetched for "+v.key)
-		return false
-	}
-	return true
 }

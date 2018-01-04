@@ -383,29 +383,29 @@ func (c *Command) UsageTemplate() string {
 	if c.HasParent() {
 		return c.parent.UsageTemplate()
 	}
-	return `Verwendung:{{if .Runnable}}
+	return `Usage:{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
-  {{.CommandPath}} [Befehl]{{end}}{{if gt (len .Aliases) 0}}
+  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
-Aliase:
+Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
-Beispiele:
+Examples:
 {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
 
-Verfügbare Befehle:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
 
 Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
 
-Globale Flags:
+Global Flags:
 {{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
 
-Weiterführende Hilfe:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
   {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
 
-Geben Sie "{{.CommandPath}} [Befehl] --help" ein, um weitere Informationen über einen Befehl zu bekommen.{{end}}
+Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
 `
 }
 
@@ -545,7 +545,7 @@ func (c *Command) findSuggestions(arg string) string {
 	}
 	suggestionsString := ""
 	if suggestions := c.SuggestionsFor(arg); len(suggestions) > 0 {
-		suggestionsString += "\n\nMeinten Sie dies?\n"
+		suggestionsString += "\n\nDid you mean this?\n"
 		for _, s := range suggestions {
 			suggestionsString += fmt.Sprintf("\t%v\n", s)
 		}
@@ -662,7 +662,7 @@ func (c *Command) execute(a []string) (err error) {
 	}
 
 	if len(c.Deprecated) > 0 {
-		c.Printf("Befehl %q ist überholt, %s\n", c.Name(), c.Deprecated)
+		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
 	}
 
 	// initialize help and version flag at the last point possible to allow for user
@@ -822,8 +822,8 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.Println("Fehler:", err.Error())
-			c.Printf("Geben Sie '%v --help' ein, um Informationen zu bekommen.\n", c.CommandPath())
+			c.Println("Error:", err.Error())
+			c.Printf("Run '%v --help' for usage.\n", c.CommandPath())
 		}
 		return c, err
 	}
@@ -840,7 +840,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilentErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.Println("Fehler:", err.Error())
+			c.Println("Error:", err.Error())
 		}
 
 		// If root command has SilentUsage flagged,
@@ -873,7 +873,7 @@ func (c *Command) validateRequiredFlags() error {
 	})
 
 	if len(missingFlagNames) > 0 {
-		return fmt.Errorf(`notwendige Flag(s) "%s" nicht gesetzt`, strings.Join(missingFlagNames, `", "`))
+		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
 	}
 	return nil
 }
@@ -884,9 +884,9 @@ func (c *Command) validateRequiredFlags() error {
 func (c *Command) InitDefaultHelpFlag() {
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("help") == nil {
-		usage := "Hilfe für "
+		usage := "help for "
 		if c.Name() == "" {
-			usage += "diesen Befehl"
+			usage += "this command"
 		} else {
 			usage += c.Name()
 		}
@@ -905,9 +905,9 @@ func (c *Command) InitDefaultVersionFlag() {
 
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("version") == nil {
-		usage := "Version für "
+		usage := "version for "
 		if c.Name() == "" {
-			usage += "diesen Befehl"
+			usage += "this command"
 		} else {
 			usage += c.Name()
 		}
@@ -925,15 +925,15 @@ func (c *Command) InitDefaultHelpCmd() {
 
 	if c.helpCommand == nil {
 		c.helpCommand = &Command{
-			Use:   "help [Befehl]",
-			Short: "Hilfe für alle Befehle",
-			Long: `Help bietet Hilfe für alle Befehle dieser Anwendung.
-Geben Sie einfach ` + c.Name() + ` help [Befehl] ein, um ausführliche Informationen zu bekommen.`,
+			Use:   "help [command]",
+			Short: "Help about any command",
+			Long: `Help provides help for any command in the application.
+Simply type ` + c.Name() + ` help [path to command] for full details.`,
 
 			Run: func(c *Command, args []string) {
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
-					c.Printf("Unbekanntes Hilfethema %#q\n", args)
+					c.Printf("Unknown help topic %#q\n", args)
 					c.Root().Usage()
 				} else {
 					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
