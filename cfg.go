@@ -143,12 +143,14 @@ func getCLSUrlFromKeyboard() (string, error) {
 
 	fmt.Print("\nEnter the URL of the cutlist server [http://cutlist.at/]: ")
 	if _, err = fmt.Scanln(&input); err != nil {
-		return "", fmt.Errorf(err.Error())
+		if input == "" {
+			fmt.Println("Take default value: http://cutlist.at/")
+			// set default
+			input = "http://cutlist.at/"
+			return input, nil
+		}
 	}
-	if input == "" {
-		// set default
-		input = "http://cutlist.at/"
-	} else if !strings.HasSuffix(input, "/") {
+	if !strings.HasSuffix(input, "/") {
 		// make sure that URL ends with slash
 		input += "/"
 	}
@@ -363,16 +365,16 @@ func getNumCPUsFromKeyboard() (string, error) {
 
 	// Ask the user as long as the input is OK
 	for !inputOK {
-		fmt.Printf("\nHow many CPUs can be used by gool (1..%d) [%d]? ", maxCPUs, maxCPUs)
+		fmt.Printf("\nHow many cpu's can be used by gool (1..%d) [%d]? ", maxCPUs, maxCPUs)
 		if _, err = fmt.Scanln(&input); err != nil {
-			fmt.Println(err.Error())
-			continue
-		}
-		// use default value if user input is empty
-		if input == "" {
-			input = strconv.Itoa(maxCPUs)
-			inputOK = true
-			continue
+			// use default value if user input is empty
+			if input == "" {
+				input = strconv.Itoa(maxCPUs)
+				fmt.Printf("Take default value: %d cpu's\n", maxCPUs)
+				inputOK = true
+				err = nil
+				continue
+			}
 		}
 		// check if input is a number
 		if re, _ := regexp.Compile(`\d+`); !re.MatchString(input) {
@@ -503,7 +505,7 @@ func getWrkDirPathFromKeyboard() (string, error) {
 	)
 
 	for !inputOK {
-		fmt.Print("\nEnter the working dir for gool (it'll be create if it doesn' exist): ")
+		fmt.Print("\nEnter the working dir for gool (it'll be created if it doesn' exist): ")
 		if _, err = fmt.Scanln(&wrkDirPath); err != nil {
 			fmt.Println(err.Error())
 			continue
