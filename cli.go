@@ -42,7 +42,7 @@ var helpTemplate = preamble + `
 
 // root command 'gool'
 var rootCmd = &cobra.Command{
-	Use:     "gool",
+	Use:     "gool [sub command]",
 	Version: Version,
 }
 
@@ -56,6 +56,7 @@ var cmdLst = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// retrieve flags
 		cmd.ParseFlags(args)
+		setLogger(logFile)
 		// print copyright etc. on command line
 		fmt.Printf(preamble)
 		// Read configuration and ...
