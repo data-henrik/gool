@@ -56,7 +56,8 @@ var cmdLst = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// retrieve flags
 		cmd.ParseFlags(args)
-		setLogger(logFile)
+		// set up logg logging
+		createLogger(logFile)
 		// print copyright etc. on command line
 		fmt.Printf(preamble)
 		// Read configuration and ...
@@ -88,6 +89,8 @@ var cmdPrc = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// retrieve flags
 		cmd.ParseFlags(args)
+		// set up logging
+		createLogger(logFile)
 		// print copyright etc. on command line
 		fmt.Printf(preamble)
 		// Read configuration and ...

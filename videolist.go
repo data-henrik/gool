@@ -28,8 +28,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-
-	"github.com/romana/rlog"
 )
 
 // type video list
@@ -50,7 +48,7 @@ func analyzeFile(fileName string) (string, string, string, error) {
 
 	// check if fileName is an OTR file
 	if re, _ := regexp.Compile(`\w+_\d{2}\.\d{2}\.\d{2}_\d{2}-\d{2}_\w+`); !re.MatchString(fileName) {
-		rlog.Trace(2, "File "+fileName+" is no OTR File")
+		log.Infof("File %s is no OTR File", fileName)
 		return key, "", status, fmt.Errorf("File %s is no OTR File", fileName)
 	}
 	// check if video is encoded ...
@@ -211,7 +209,7 @@ func (vl videoList) read(patterns []string) error {
 	for _, p := range patterns {
 		// Get all files that fits to pattern p by calling globbing function
 		if filePaths, err = filepath.Glob(p); err != nil {
-			rlog.Trace(1, "'"+p+"' couldn't be interpreted: "+err.Error())
+			log.Errorf("'%s' couldn't be interpreted: %v", p, err)
 			continue
 		}
 

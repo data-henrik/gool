@@ -31,7 +31,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/romana/rlog"
+	"github.com/sirupsen/logrus"
 )
 
 // callOTRDecoder calls otrdecoder and handles the command line output.
@@ -58,22 +58,29 @@ func (v *video) callOTRDecoder() error {
 		"-p", cfg.otrPassword,
 		"-i", v.filePath,
 		"-o", cfg.decDirPath)
-	rlog.Trace(3, cmd)
+	// print cmd string to log
+	{
+		s := ""
+		for _, t := range cmd.Args {
+			s += t + " "
+		}
+		log.WithFields(logrus.Fields{"key": v.key}).Debugf("Decode command: %s", s)
+	}
 	// Set up output pipe
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		rlog.Error("Cannot establish pipe for stdout: %v" + err.Error())
+		log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot establish pipe for stdout: %v", err.Error())
 		return err
 	}
 	// Set up error pipe
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		rlog.Error("Cannot establish pipe for stderr: %v" + err.Error())
+		log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot establish pipe for stderr: %v", err.Error())
 		return err
 	}
 	// Start the command after having set up the pipes
 	if err = cmd.Start(); err != nil {
-		rlog.Error("Cannot start decoding program: %v" + err.Error())
+		log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot start otrdecoder: %v", err)
 		return err
 	}
 
@@ -106,10 +113,10 @@ func (v *video) callOTRDecoder() error {
 		// errStr) is written into error file
 		errFilePath := cfg.logDirPath + "/" + v.key + path.Ext(v.filePath) + errFileSuffixDec
 		if errFile, e := os.Create(errFilePath); e != nil {
-			rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
+			log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot create \"%s\": %v", errFilePath, e)
 		} else {
 			if _, e = errFile.WriteString(errStr); e != nil {
-				rlog.Error("Cannot write into \"" + errFilePath + "\": " + e.Error())
+				log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot write into \"%s\": %v", errFilePath, e)
 			}
 			_ = errFile.Close()
 		}
@@ -135,8 +142,7 @@ func (v *video) decode(wg *sync.WaitGroup, r chan<- res) {
 
 	// Process videos based on error info from decoding go routine
 	if err := v.postProcessing("", errOTR); err != nil {
-		fmt.Println(err.Error())
-		rlog.Error(err.Error())
+		log.WithFields(logrus.Fields{"key": v.key}).Error(err.Error())
 	}
 
 	// write error message to channel

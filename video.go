@@ -28,7 +28,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/romana/rlog"
 	"github.com/vbauerster/mpb"
 	"github.com/vbauerster/mpb/decor"
 )
@@ -177,24 +176,24 @@ func (v *video) postProcessing(cf string, vErr error) error {
 		if v.status == vidStatusEnc {
 			if err = os.Remove(v.filePath); err != nil {
 				err = fmt.Errorf("%s couldn't be deleted: %v", v.filePath, err)
-				rlog.Warn(v.filePath + " couldn't be deleted: " + err.Error())
+				log.Warnf("%s couldn't be deleted: %v", v.filePath, err)
 			} else {
-				rlog.Trace(3, v.filePath+" has been deleted")
+				log.Infof("%s has been deleted", v.filePath)
 			}
 		} else {
 			if v.status == vidStatusDec {
 				// move video file into correspondig sub dir
 				dstPath := cfg.arcDirPath + "/" + v.key + path.Ext(v.filePath)
 				if err = os.Rename(v.filePath, dstPath); err != nil {
-					err = fmt.Errorf("%s cannot be moved: %v", v.filePath, err)
-					rlog.Error(v.filePath + " cannot be moved to " + dstPath + ": " + err.Error())
+					err = fmt.Errorf("%s cannot be moved to %s: %v", v.filePath, dstPath, err)
+					log.Errorf("%s cannot be moved to %s: %v", v.filePath, dstPath, err)
 				}
 			}
 		}
 	}
 
 	// update container format (if necessary)
-	if cf != v.cf {
+	if cf != v.cf && cf != "" {
 		v.cf = cf
 	}
 
@@ -266,8 +265,8 @@ func (v *video) preProcessing() error {
 	if v.filePath != dstPath {
 		// move video file into correspondig sub dir
 		if err = os.Rename(srcDir+fileName, dstPath); err != nil {
-			err = fmt.Errorf("%s cannot be moved: %v", fileName, err)
-			rlog.Error(v.filePath + " cannot be moved to " + dstPath + ": " + err.Error())
+			err = fmt.Errorf("%s cannot be moved to %s: %v", fileName, dstPath, err)
+			log.Errorf("%s cannot be moved to %s: %v", v.filePath, dstPath, err)
 		}
 		// adjust file path in video object accordingly
 		v.filePath = dstPath
@@ -358,9 +357,9 @@ func (v *video) updateFromFile(status string, filePath string) {
 		if cfg.doCleanUp {
 			if err = os.Remove(filePath); err != nil {
 				err = fmt.Errorf("%s couldn't be deleted: %v", filePath, err)
-				rlog.Warn(filePath + " couldn't be deleted: " + err.Error())
+				log.Errorf("%s couldn't be deleted: %v", filePath, err)
 			} else {
-				rlog.Trace(3, v.filePath+" has been deleted")
+				log.Infof("%s has been deleted", filePath)
 			}
 		}
 	}

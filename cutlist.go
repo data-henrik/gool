@@ -32,10 +32,9 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/net/html/charset"
-
 	"github.com/go-ini/ini"
-	"github.com/romana/rlog"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/net/html/charset"
 )
 
 // Cutlist stores cutlists loaded from a cutlist server
@@ -74,7 +73,7 @@ func (clhs clHeaders) Swap(i, j int)      { clhs[i], clhs[j] = clhs[j], clhs[i] 
 func (v *video) hasCutlists() bool {
 	// load cutlist headers from cutlist.at. If no lists could be retrieved: Log message and return
 	if len(v.loadCutlistHeaders()) == 0 {
-		rlog.Trace(1, "No cutlist header could be fetched for "+v.key)
+		log.WithFields(logrus.Fields{"key": v.key}).Warn("No cutlist header could be loaded.")
 		return false
 	}
 	return true
@@ -101,15 +100,15 @@ func (v *video) loadCutlist(wg *sync.WaitGroup, r chan<- res) {
 	// load cutlist headers from cutlist.at. If no lists could be retrieved: Print error
 	// message and return
 	if ids = v.loadCutlistHeaders(); len(ids) == 0 {
-		rlog.Trace(1, "No cutlist header could be fetched for "+v.key)
+		log.WithFields(logrus.Fields{"key": v.key}).Warn("No cutlist header could be loaded")
 		r <- res{key: v.key, err: fmt.Errorf("No cutlist found")}
 		return
 	}
 
 	// retrieve cutlist from cutlist.at using the cutlist header list. If no cutlist could
 	// be retrieved: Print error message and return
-	if v.cl = loadCutlistDetails(ids); v.cl == nil {
-		rlog.Trace(1, "No cutlist could be fetched for "+v.key)
+	if v.cl = v.loadCutlistDetails(ids); v.cl == nil {
+		log.WithFields(logrus.Fields{"key": v.key}).Warn("No cutlist header could be loaded")
 		r <- res{key: v.key, err: fmt.Errorf("No cutlists cut be fetched")}
 		return
 	}
@@ -121,7 +120,7 @@ func (v *video) loadCutlist(wg *sync.WaitGroup, r chan<- res) {
 // loadCutlist loops at a (sorted) cutlist header list and fetches the corresponding
 // cutlist. In case of success, it returns. In case of failure, it continues with
 // the next entry of the list
-func loadCutlistDetails(ids []string) *cutlist {
+func (v *video) loadCutlistDetails(ids []string) *cutlist {
 
 	// constants for cl INI file sections and keys
 	const (
@@ -177,40 +176,40 @@ func loadCutlistDetails(ids []string) *cutlist {
 
 		// open cutlist INI data source with go-ini
 		if clFile, err = ini.InsensitiveLoad(clINI); err != nil {
-			rlog.Error("Cutlist file could not be opened for ID '" + id + "':" + err.Error())
+			log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cutlist file could not be opened for ID '%s': %v", id, err)
 			continue
 		}
 
 		// get GENERAL section
 		if sec, err = clFile.GetSection(clSectionGeneral); err != nil {
-			rlog.Error("Cutlist ID=" + id + " does not have section '" + clSectionGeneral + "':" + err.Error())
+			log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cutlist ID=%s does not have section '%s': %v", id, clSectionGeneral, err)
 			continue
 		}
 
 		// get display aspect ration
 		if key, err = sec.GetKey(clKeyRatio); err != nil {
-			rlog.Warn("Cutlist ID=" + id + " does not have key '" + clKeyRatio + "'")
+			log.WithFields(logrus.Fields{"key": v.key}).Warnf("Cutlist ID=%s does not have key '%s'", id, clKeyRatio)
 		} else {
 			cl.ratio = key.Value()
 		}
 
 		// get frames per second
 		if key, err = sec.GetKey(clKeyFPS); err != nil {
-			rlog.Warn("Cutlist ID=" + id + " does not have key '" + clKeyFPS + "'")
+			log.WithFields(logrus.Fields{"key": v.key}).Warnf("Cutlist ID=%s does not have key '%s'", id, clKeyFPS)
 		} else {
 			cl.fps, _ = strconv.ParseFloat(key.Value(), 64)
 		}
 
 		// get intended cut application
 		if key, err = sec.GetKey(clKeyApp); err != nil {
-			rlog.Warn("Cutlist ID=" + id + " does not have key '" + clKeyApp + "'")
+			log.WithFields(logrus.Fields{"key": v.key}).Warnf("Cutlist ID=%s does not have key '%s'", id, clKeyApp)
 		} else {
 			cl.app = key.Value()
 		}
 
 		// get number of cuts
 		if key, err = sec.GetKey(clKeyNumCuts); err != nil {
-			rlog.Error("Cutlist ID=" + id + " does not have key '" + clKeyNumCuts + "'")
+			log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cutlist ID=%s does not have key '%s'", id, clKeyNumCuts)
 			continue
 		}
 		numCuts, _ = strconv.Atoi(key.Value())
@@ -219,7 +218,7 @@ func loadCutlistDetails(ids []string) *cutlist {
 		for i := 0; i < numCuts; i++ {
 			// get [Cut{i}] section
 			if sec, err = clFile.GetSection(clSectionCut + strconv.Itoa(i)); err != nil {
-				rlog.Error("Cutlist ID=" + id + " does not have section '" + clSectionCut + strconv.Itoa(i) + "'")
+				log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cutlist ID=%s does not have section '%s'.", id, clSectionCut+strconv.Itoa(i))
 				break
 			}
 			sg = new(seg)
@@ -247,7 +246,7 @@ func loadCutlistDetails(ids []string) *cutlist {
 			}
 
 			if (sg.timeStart == 0.0 && sg.timeDur == 0.0) && (sg.frameStart == 0 && sg.frameDur == 0) {
-				rlog.Warn("Cutlist ID=" + id + ": Cut " + clSectionCut + strconv.Itoa(i) + " does not have sufficient information")
+				log.Errorf("Cutlist ID=%s: Cut %s does not have sufficient information", id, clSectionCut+strconv.Itoa(i))
 				cl.segs = cl.segs[:0]
 				break
 			}
@@ -298,7 +297,7 @@ func (v *video) loadCutlistHeaders() []string {
 	// map to store values of relevant element values for one cutlist
 	var clRelVals map[string]string
 
-	rlog.Trace(3, "Call cutlist.at: ", cfg.clsURL+"getxml.php?name="+v.key)
+	log.Debugf("Call cutlist.at: %sgetxml.php?name=%s", cfg.clsURL, v.key)
 
 	// load cutlist header from cutlist.at by calling URL
 	if resp, err = http.Get(cfg.clsURL + "getxml.php?name=" + v.key); err != nil {
@@ -321,7 +320,7 @@ func (v *video) loadCutlistHeaders() []string {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			rlog.Error("Error while reading cutlist headers: " + err.Error())
+			log.Errorf("Error while reading cutlist headers: %v", err)
 			return ids
 		}
 

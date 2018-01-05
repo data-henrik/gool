@@ -31,7 +31,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/romana/rlog"
+	"github.com/sirupsen/logrus"
 )
 
 // callMKVmerge calls mkvmerge and handles the command line output. It return
@@ -56,7 +56,6 @@ func (v *video) callMKVmerge() (string, error) {
 
 	// create split string for MKVmerge
 	if v.cl.frameBased {
-		rlog.Trace(3, "Cutlist is frame based")
 		splitStr = "parts-frames:"
 		for i := 0; i < len(v.cl.segs); i++ {
 			if i > 0 {
@@ -65,7 +64,6 @@ func (v *video) callMKVmerge() (string, error) {
 			splitStr += strconv.Itoa(v.cl.segs[i].frameStart) + "-" + strconv.Itoa(v.cl.segs[i].frameStart+v.cl.segs[i].frameDur)
 		}
 	} else {
-		rlog.Trace(3, "Cutlist is time based")
 		splitStr = "parts:"
 		for i := 0; i < len(v.cl.segs); i++ {
 			if i > 0 {
@@ -84,19 +82,26 @@ func (v *video) callMKVmerge() (string, error) {
 		"--split", splitStr,
 		v.filePath,
 	)
-	rlog.Trace(3, cmd)
+	// print cmd string to log
+	{
+		s := ""
+		for _, t := range cmd.Args {
+			s += t + " "
+		}
+		log.WithFields(logrus.Fields{"key": v.key}).Debugf("Cut command: %s", s)
+	}
 	// Set up error pipe
 	stderr, err = cmd.StderrPipe()
 	if err != nil {
-		rlog.Error("Cannot establish pipe for stderr: %v" + err.Error())
+		log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot establish pipe for stderr: %v", err.Error())
 		return "", err
 	}
 	// Start the command after having set up the pipes
 	if err = cmd.Start(); err != nil {
-		rlog.Error("Cannot start MKVmerge: %v" + err.Error())
+		log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot start MKVmerge: %v", err.Error())
 		return "", err
 	}
-	rlog.Trace(3, "Video has been cut with MKVmerge: ", outFilePath)
+	log.WithFields(logrus.Fields{"key": v.key}).Infof("Video has been cut with MKVmerge: %s", outFilePath)
 
 	// read command's stderr line by line and store it in a errStr for further processing
 	cmdErr := bufio.NewScanner(stderr)
@@ -108,10 +113,10 @@ func (v *video) callMKVmerge() (string, error) {
 		// errStr) is written into error file
 		errFilePath := cfg.logDirPath + "/" + v.key + path.Ext(v.filePath) + errFileSuffixCut
 		if errFile, e := os.Create(errFilePath); e != nil {
-			rlog.Error("Cannot create \"" + errFilePath + "\": " + e.Error())
+			log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot create \"%s\": %v", errFilePath, e)
 		} else {
 			if _, e = errFile.WriteString(errStr); e != nil {
-				rlog.Error("Cannot write into \"" + errFilePath + "\": " + e.Error())
+				log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot write into \"%s\": %v", errFilePath, e)
 			}
 			_ = errFile.Close()
 		}
@@ -122,22 +127,6 @@ func (v *video) callMKVmerge() (string, error) {
 
 	return "mkv", err
 }
-
-/*
-TODO: Delete?
-// cleanTmpDir deletes all files in the tmp directory that belong to the video indicated by key
-func cleanTmpDir(key string) {
-	filePaths, _ := filepath.Glob(cfg.tmpDirPath + "/" + key + "*")
-	for _, filePath := range filePaths {
-		if err := os.Remove(filePath); err != nil {
-			err = fmt.Errorf("%s konnte nicht gelöscht werden: %v", filePath, err)
-			rlog.Warn(filePath + " couldn't be deleted: " + err.Error())
-		} else {
-			rlog.Trace(3, filePath+" has been deleted")
-		}
-	}
-}
-*/
 
 // cut cuts a video according to it's cutlist. The method is called as go
 // routine. It can only be called if the video has (a) been decoded and
@@ -153,7 +142,12 @@ func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
 	// ... and check if none of them carries an error (this is the case
 	// if decoding and fetching of cutlist have been successful)
 	if r0.err != nil || r1.err != nil {
-		rlog.Trace(1, "Error during decoding or cutlist fetching")
+		if r0.err != nil {
+			log.WithFields(logrus.Fields{"key": v.key}).Errorf("Error during decoding or cutlist loading: %v", r0.err)
+		}
+		if r1.err != nil {
+			log.WithFields(logrus.Fields{"key": v.key}).Errorf("Error during decoding or cutlist loading: %v", r1.err)
+		}
 		return
 	}
 
@@ -167,8 +161,7 @@ func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
 
 	// Process videos based on error info from decoding go routine
 	if err := v.postProcessing(cf, errCut); err != nil {
-		fmt.Println(err.Error())
-		rlog.Error(err.Error())
+		log.WithFields(logrus.Fields{"key": v.key}).Error(err.Error())
 	}
 }
 

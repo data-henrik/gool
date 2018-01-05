@@ -42,8 +42,7 @@ import (
 	"strings"
 
 	"github.com/go-ini/ini"
-	"github.com/romana/rlog"
-	"github.com/zchee/go-xdgbasedir"
+	xdg "github.com/zchee/go-xdgbasedir"
 )
 
 // Constants for gool configuration
@@ -84,13 +83,12 @@ const (
 
 // config contains the content read from the gool config file
 type config struct {
-	wrkDirPath string // working dir for gool
-	encDirPath string // dir for encoded videos
-	decDirPath string // dir for decoded videos
-	cutDirPath string // dir for cut videos
-	logDirPath string // dir for log files
-	arcDirPath string // dir for archived decoded videos (to be able to repeat the cut)
-	//	tmpDirPath    string // dir for temporary files TODO: delete?
+	wrkDirPath    string // working dir for gool
+	encDirPath    string // dir for encoded videos
+	decDirPath    string // dir for decoded videos
+	cutDirPath    string // dir for cut videos
+	logDirPath    string // dir for log files
+	arcDirPath    string // dir for archived decoded videos (to be able to repeat the cut)
 	numCpus       int    // number of CPUs that gool is allowed to use
 	otrDecDirPath string // directory where otrdecoder is stored
 	otrUsername   string // username for OTR
@@ -119,16 +117,18 @@ func checkDirPath(dir string, doCreate bool) error {
 		if os.IsNotExist(err) {
 			// ... create it, if doCreate is true ...
 			if doCreate {
-				rlog.Trace(1, dir+" doesn't exist: Create it")
+				log.Infof("%s doesn't exist: Create it", dir)
 				if err = os.MkdirAll(dir, 0755); err != nil {
+					log.Errorf("%s cannot be created: %v", dir, err)
 					fmt.Printf("%s cannot be created: %v\n", dir, err)
 				}
 			} else {
 				// ... otherwise: exit
-				rlog.Trace(1, dir+" doesn't exist: Exit")
+				log.Errorf("%s doesn't exist: %v", dir, err)
 				fmt.Printf("%s doesn't exist: %v\n", dir, err)
 			}
 		} else {
+			log.Errorf("Error while accessing %s: %v", dir, err)
 			fmt.Printf("Error while accessing %s: %v\n", dir, err)
 		}
 	}
@@ -186,12 +186,12 @@ func (cfg *config) getFromFile() error {
 
 	// Get configuration directory via the environment variable $XDG_CONFIG_HOME.
 	// If $XDG_CONFIG_HOME is empty, the path "~/.config" is used as default
-	cfgHomeDirPath := xdgbasedir.ConfigHome()
+	cfgHomeDirPath := xdg.ConfigHome()
 	if cfgHomeDirPath == "" {
-		rlog.Trace(1, "$XDG_CONFIG_HOME is not set, use "+cfgHomeDirPathDefault)
+		log.Infof("$XDG_CONFIG_HOME is not set, use %s", cfgHomeDirPathDefault)
 		cfgHomeDirPath = cfgHomeDirPathDefault
 	}
-	rlog.Trace(3, "Config home directory: "+cfgHomeDirPath)
+	log.Debugf("Config home directory: %s", cfgHomeDirPath)
 
 	// Check if the config home directory is existing. Create it (and its parents) if necessary
 	if err = checkDirPath(cfgHomeDirPath, true); err != nil {
@@ -200,12 +200,12 @@ func (cfg *config) getFromFile() error {
 
 	// Assemble the name of the gool configuration file.
 	cfgFilepath := cfgHomeDirPath + "/" + cfgFileName
-	rlog.Trace(3, "Config file name: "+cfgFilepath)
+	log.Infof("Config file name: %s", cfgFilepath)
 
 	// Config file is tried to be loaded by go-ini package.
 	// If that's not possible, it's created and filled with default values.
 	if cfgFile, err = ini.InsensitiveLoad(cfgFilepath); err != nil {
-		rlog.Trace(1, "Config file is not existing. Go forward with empty config")
+		log.Debug("Config file is not existing. Go forward with empty config")
 		cfgFile = ini.Empty()
 		hasChanged = true
 	}
@@ -236,11 +236,6 @@ func (cfg *config) getFromFile() error {
 	if cfg.logDirPath, err = getSubDirPath(subDirNameLog); err != nil {
 		return err
 	}
-	/* TODO: delete?
-	if cfg.tmpDirPath, err = getSubDirPath(subDirNameTmp); err != nil {
-		return err
-	}
-	*/
 
 	// Read NUM_CPUS_FOR_GOOL key. If it doesn't exist: Create it.
 	if key, err = getKey(cfgFile, sec, cfgKeyNumCPUs, getNumCPUsFromKeyboard, &hasChanged); err != nil {
@@ -285,16 +280,18 @@ func (cfg *config) getFromFile() error {
 
 	// if entries of the configuration file have been changed is needs to be saved
 	if hasChanged {
-		rlog.Trace(3, "Config has been changed and needs to be saved")
+		log.Debug("Config has been changed and needs to be saved")
 		if err = cfgFile.SaveTo(cfgFilepath); err != nil {
+			log.Errorf("Configuration file %s cannot be saved: %v", cfgFilepath, err)
 			return fmt.Errorf("Configuration file %s cannot be saved: %v", cfgFilepath, err)
 		}
-		rlog.Trace(3, "Config has been saved")
+		log.Debug("Config has been saved")
 		// Change file mode. As a password is stored in there, only the owner should be able to read it
 		if err = os.Chmod(cfgFilepath, 0600); err != nil {
+			log.Errorf("chmod 0600 could not be executed for %s: %v", cfgFilepath, err)
 			return fmt.Errorf("chmod 0600 could not be executed for %s: %v", cfgFilepath, err)
 		}
-		rlog.Trace(3, "Mode of config file changed to 0600")
+		log.Debug("Mode of config file changed to 0600")
 	}
 
 	return err
@@ -322,7 +319,7 @@ func getKey(iniFile *ini.File, sec *ini.Section, keyName string, f getFromKeyboa
 
 	// If key exists and has a value: Get key and return
 	if keyExists && valExists {
-		rlog.Trace(3, "["+sec.Name()+"]."+keyName+"="+sec.Key(keyName).Value())
+		log.Debugf("[%s].%s=%s", sec.Name(), keyName, sec.Key(keyName).Value())
 
 		return sec.Key(keyName), nil
 	}
@@ -331,9 +328,9 @@ func getKey(iniFile *ini.File, sec *ini.Section, keyName string, f getFromKeyboa
 	*hasChanged = true
 
 	// Get key value from user input by calling function f
-	rlog.Trace(2, "Key "+keyName+" is not filled: Ask user for value")
+	log.Debugf("Key %s is not filled: Ask user for value", keyName)
 	if val, err = f(); err != nil {
-		rlog.Trace(1, "Error during user input for key "+keyName+": "+err.Error())
+		log.Errorf("Error during user input for key %s: %v", keyName, err.Error())
 
 		return nil, fmt.Errorf("Error during user entry for %s: %v", keyName, err)
 	}
@@ -345,11 +342,12 @@ func getKey(iniFile *ini.File, sec *ini.Section, keyName string, f getFromKeyboa
 	} else {
 		// ... otherwise create key and set value
 		if _, err = sec.NewKey(keyName, val); err != nil {
+			log.Errorf("Key %s cannot be created: %v", keyName, err)
 			err = fmt.Errorf("Key %s cannot be created: %v", keyName, err)
 		}
 	}
 
-	rlog.Trace(3, "["+sec.Name()+"]."+keyName+"="+sec.Key(keyName).Value())
+	log.Debugf("[%s].%s=%s", sec.Name(), keyName, sec.Key(keyName).Value())
 
 	return sec.Key(keyName), err
 }
@@ -422,10 +420,8 @@ func getOTRDecDirPathFromKeyboard() (string, error) {
 		otrDecFilepath := otrDecDirPath + "/" + otrDecoderName
 		if _, err = os.Stat(otrDecFilepath); err != nil {
 			if os.IsNotExist(err) {
-				rlog.Trace(1, otrDecDirPath+" doesn't contain otrdecoder, ask again")
 				fmt.Printf("%s doesn't contain otrdecoder: %v\n", otrDecDirPath, err)
 			} else {
-				rlog.Trace(1, "Could not access "+otrDecFilepath)
 				fmt.Printf("Could not access %s: %v\n", otrDecFilepath, err)
 			}
 			continue
@@ -477,7 +473,7 @@ func getSection(iniFile *ini.File, secName string, hasChanged *bool) (*ini.Secti
 
 	//Try to read section from ini file
 	if sec, err = iniFile.GetSection(secName); err != nil {
-		rlog.Trace(1, "Section "+secName+" does not exist: Create it")
+		log.Infof("Section %s does not exist: Create it", secName)
 
 		// if it doesn't exist: create it
 		if sec, err = iniFile.NewSection(secName); err == nil {

@@ -26,14 +26,27 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
+
+// global logger for gool
+var log = logrus.New()
 
 // text formatting structure for gool
 type goolTextFormatter struct{}
 
+// helper function to check existence of file
+func exists(fp string) bool {
+	if _, err := os.Stat(fp); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
+}
+
 // Format print one log line in gool specific format
-func (f *goolTextFormatter) Format(entry *log.Entry) ([]byte, error) {
+func (f *goolTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	var b *bytes.Buffer
 
 	// initialize buffer
@@ -68,28 +81,39 @@ func (f *goolTextFormatter) Format(entry *log.Entry) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-// setLogger initializes the logging function
-func setLogger(logFile string) {
+// createLogger creates and initializes the logger for gool
+func createLogger(logFile string) {
+	var (
+		f   *os.File
+		err error
+	)
+
 	// if no log file was specified at command line: Set logger output to Nirwana and do nothing else
 	if logFile == "" {
-		log.SetOutput(ioutil.Discard)
+		log.Out = ioutil.Discard
 		return
 	}
 
 	// get absolute filepath for log file
 	fp, _ := filepath.Abs(logFile)
-	// create / open log file
-	f, err := os.OpenFile(fp, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
+
+	// delete log file if it already exists
+	if exists(fp) {
+		_ = os.Remove(fp)
+	}
+
+	// create log file
+	if f, err = os.Create(fp); err != nil {
 		fmt.Printf("Log file could not be created/opened: %v", err)
 		return
 	}
 
 	// set log file as output for logging
-	log.SetOutput(f)
+	log.Out = f
 
 	// log all messages
-	log.SetLevel(log.DebugLevel)
+	log.Level = logrus.DebugLevel
 
-	log.SetFormatter(new(goolTextFormatter))
+	// set custom formatter
+	log.Formatter = new(goolTextFormatter)
 }
