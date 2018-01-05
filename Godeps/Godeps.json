@@ -19,8 +19,9 @@
 			"Rev": "6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c"
 		},
 		{
-			"ImportPath": "github.com/romana/rlog",
-			"Rev": "f018bc92e7d71f27c04e04cbf008860416c21d01"
+			"ImportPath": "github.com/sirupsen/logrus",
+			"Comment": "v1.0.4",
+			"Rev": "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
 		},
 		{
 			"ImportPath": "github.com/spf13/cobra",
@@ -58,6 +59,10 @@
 			"Rev": "e894686011046080875db61fdaaa3ef31163df72"
 		},
 		{
+			"ImportPath": "golang.org/x/crypto/ssh/terminal",
+			"Rev": "0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8"
+		},
+		{
 			"ImportPath": "golang.org/x/net/html",
 			"Rev": "d866cfc389cec985d6fda2859936a575a55a3ab6"
 		},
@@ -71,6 +76,10 @@
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "9418b3fdda89831e55f1d80702d6bf2f06d5438f"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/windows",
 			"Rev": "9418b3fdda89831e55f1d80702d6bf2f06d5438f"
 		},
 		{
