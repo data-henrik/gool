@@ -54,6 +54,9 @@ var cmdLst = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
+		// retrieve flags
+		cmd.ParseFlags(args)
+		// print copyright etc. on command line
 		fmt.Printf(preamble)
 		// Read configuration and ...
 		if err := cfg.getFromFile(); err != nil {
@@ -82,6 +85,9 @@ var cmdPrc = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
+		// retrieve flags
+		cmd.ParseFlags(args)
+		// print copyright etc. on command line
 		fmt.Printf(preamble)
 		// Read configuration and ...
 		if err := cfg.getFromFile(); err != nil {
@@ -104,6 +110,9 @@ var cmdPrc = &cobra.Command{
 	},
 }
 
+// logFile stores parameter of logging flag
+var logFile string
+
 func init() {
 	// set custom help template
 	rootCmd.SetHelpTemplate(helpTemplate)
@@ -112,6 +121,10 @@ func init() {
 
 	// build up command structure: 'list' and 'process' are sub commands of 'gool')
 	rootCmd.AddCommand(cmdLst, cmdPrc)
+
+	// define flag for logging
+	cmdLst.Flags().StringVarP(&logFile, "log", "l", "", "Switch on logging and set log file name")
+	cmdPrc.Flags().StringVarP(&logFile, "log", "l", "", "Switch on logging and set log file name")
 }
 
 // Execute executes the root command
