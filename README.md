@@ -81,11 +81,11 @@ During the first call gool requires some inputs for configuraion. This data is s
 
 ### Directories
 
-gool requires a working directory (e.g. `~/Videos/OTR`). In this directory, the sub directories `Encoded`, `Decoded` and `Cut` are created. They'll store the video files depending on its processing status. `Cut`, for instance, contains the video files that have been cut, `Decoded` the decoded and uncut files (it can happen that a video can be decoded but cannot be cut because cutlists donÄt exist yet). Moreover, a sub directory `log` is being created. It contains log files if errors occurred.
+gool requires a working directory (e.g. `~/Videos/OTR`). In this directory, the sub directories `Encoded`, `Decoded` and `Cut` are created. They'll store the video files depending on its processing status. `Cut`, for instance, contains the video files that have been cut, `Decoded` the decoded and uncut files (it can happen that a video can be decoded but cannot be cut because cutlists donÄt exist yet). If videos have been cut, the uncut version is stored in the sub directory `Decoded/Archive`to allow users to repeat the cutting if they are not hapoy with the result. Moreover, a sub directory `log` is being created. It contains log files if errors occurred.
 
 ### Call
 
-The command `gool list` lists all video files, that are stored in the working directory or its sub directories, incl. its processing status. `gool process` starts processing of videos. In both cases, additional file paths can be passed to the command. These files are considered by gool as well. The command `gool process ~/Downloads/*` would process videos located in the downloads folder (in addition to the videos stored in the working directoy and its sub directories).
+The command `gool list` lists all video files, that are stored in the working directory or its sub directories, incl. its processing status. `gool process` starts processing of videos. In both cases, additional file paths can be passed to the command. These files are considered by gool as well. The command `gool process ~/Downloads/*` would process videos located in the downloads folder (in addition to the videos stored in the working directoy and its sub directories). The flag `--log [file]` after on of the sub commands switches on logging.
 
 If the mime type for otrkey files has been created, a double click on such a file is sufficient to decode an cut it with gool.
 
