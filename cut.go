@@ -31,7 +31,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // callMKVmerge calls mkvmerge and handles the command line output. It return
@@ -88,20 +88,20 @@ func (v *video) callMKVmerge() (string, error) {
 		for _, t := range cmd.Args {
 			s += t + " "
 		}
-		log.WithFields(logrus.Fields{"key": v.key}).Debugf("Cut command: %s", s)
+		log.WithFields(log.Fields{"key": v.key}).Debugf("Cut command: %s", s)
 	}
 	// Set up error pipe
 	stderr, err = cmd.StderrPipe()
 	if err != nil {
-		log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot establish pipe for stderr: %v", err.Error())
+		log.WithFields(log.Fields{"key": v.key}).Errorf("Cannot establish pipe for stderr: %v", err.Error())
 		return "", err
 	}
 	// Start the command after having set up the pipes
 	if err = cmd.Start(); err != nil {
-		log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot start MKVmerge: %v", err.Error())
+		log.WithFields(log.Fields{"key": v.key}).Errorf("Cannot start MKVmerge: %v", err.Error())
 		return "", err
 	}
-	log.WithFields(logrus.Fields{"key": v.key}).Infof("Video has been cut with MKVmerge: %s", outFilePath)
+	log.WithFields(log.Fields{"key": v.key}).Infof("Video has been cut with MKVmerge: %s", outFilePath)
 
 	// read command's stderr line by line and store it in a errStr for further processing
 	cmdErr := bufio.NewScanner(stderr)
@@ -113,10 +113,10 @@ func (v *video) callMKVmerge() (string, error) {
 		// errStr) is written into error file
 		errFilePath := cfg.logDirPath + "/" + v.key + path.Ext(v.filePath) + errFileSuffixCut
 		if errFile, e := os.Create(errFilePath); e != nil {
-			log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot create \"%s\": %v", errFilePath, e)
+			log.WithFields(log.Fields{"key": v.key}).Errorf("Cannot create \"%s\": %v", errFilePath, e)
 		} else {
 			if _, e = errFile.WriteString(errStr); e != nil {
-				log.WithFields(logrus.Fields{"key": v.key}).Errorf("Cannot write into \"%s\": %v", errFilePath, e)
+				log.WithFields(log.Fields{"key": v.key}).Errorf("Cannot write into \"%s\": %v", errFilePath, e)
 			}
 			_ = errFile.Close()
 		}
@@ -143,10 +143,10 @@ func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
 	// if decoding and fetching of cutlist have been successful)
 	if r0.err != nil || r1.err != nil {
 		if r0.err != nil {
-			log.WithFields(logrus.Fields{"key": v.key}).Errorf("Error during decoding or cutlist loading: %v", r0.err)
+			log.WithFields(log.Fields{"key": v.key}).Errorf("Error during decoding or cutlist loading: %v", r0.err)
 		}
 		if r1.err != nil {
-			log.WithFields(logrus.Fields{"key": v.key}).Errorf("Error during decoding or cutlist loading: %v", r1.err)
+			log.WithFields(log.Fields{"key": v.key}).Errorf("Error during decoding or cutlist loading: %v", r1.err)
 		}
 		return
 	}
@@ -161,7 +161,7 @@ func (v *video) cut(wg *sync.WaitGroup, r <-chan res) {
 
 	// Process videos based on error info from decoding go routine
 	if err := v.postProcessing(cf, errCut); err != nil {
-		log.WithFields(logrus.Fields{"key": v.key}).Error(err.Error())
+		log.WithFields(log.Fields{"key": v.key}).Error(err.Error())
 	}
 }
 

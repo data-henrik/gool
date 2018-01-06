@@ -42,6 +42,7 @@ import (
 	"strings"
 
 	"github.com/go-ini/ini"
+	log "github.com/sirupsen/logrus"
 	xdg "github.com/zchee/go-xdgbasedir"
 )
 

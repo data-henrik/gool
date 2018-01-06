@@ -26,11 +26,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
-
-// global logger for gool
-var log = logrus.New()
 
 // text formatting structure for gool
 type goolTextFormatter struct{}
@@ -46,7 +43,7 @@ func exists(fp string) bool {
 }
 
 // Format print one log line in gool specific format
-func (f *goolTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+func (f *goolTextFormatter) Format(entry *log.Entry) ([]byte, error) {
 	var b *bytes.Buffer
 
 	// initialize buffer
@@ -57,7 +54,7 @@ func (f *goolTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	}
 
 	// write log level
-	b.WriteString(fmt.Sprintf("%-7s :", entry.Level.String()))
+	b.WriteString(fmt.Sprintf("[%-7s]:", entry.Level.String()))
 
 	// write custom data fields
 	for _, value := range entry.Data {
@@ -68,7 +65,7 @@ func (f *goolTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		if !ok {
 			stringVal = fmt.Sprint(value)
 		}
-		b.WriteString(stringVal)
+		b.WriteString("[" + stringVal + "]")
 	}
 
 	// write log message
@@ -90,7 +87,7 @@ func createLogger(logFile string) {
 
 	// if no log file was specified at command line: Set logger output to Nirwana and do nothing else
 	if logFile == "" {
-		log.Out = ioutil.Discard
+		log.SetOutput(ioutil.Discard)
 		return
 	}
 
@@ -109,11 +106,11 @@ func createLogger(logFile string) {
 	}
 
 	// set log file as output for logging
-	log.Out = f
+	log.SetOutput(f)
 
 	// log all messages
-	log.Level = logrus.DebugLevel
+	log.SetLevel(log.DebugLevel)
 
 	// set custom formatter
-	log.Formatter = new(goolTextFormatter)
+	log.SetFormatter(new(goolTextFormatter))
 }

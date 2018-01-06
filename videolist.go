@@ -28,6 +28,8 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // type video list
