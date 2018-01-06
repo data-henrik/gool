@@ -175,13 +175,13 @@ func timeStr(f float64) string {
 	i, _ := strconv.Atoi(a[0])
 
 	// hours
-	hh := int(i / 3600)
+	hh := i / 3600
 
 	// decrease i by full hours
 	i -= hh * 3600
 
 	// minutes
-	mm := int(i / 60)
+	mm := i / 60
 
 	// seconds
 	ss := i - mm*60

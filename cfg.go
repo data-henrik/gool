@@ -67,7 +67,6 @@ const (
 	subDirNameCut = "Cut"
 	subDirNameArc = "Decoded/Archive"
 	subDirNameLog = "log"
-	subDirNameTmp = "tmp"
 )
 
 // Constants for error file suffices
@@ -79,7 +78,6 @@ const (
 // Constants related to cli commands or programs
 const (
 	otrDecoderName = "otrdecoder"
-	ffmpegName     = "ffmpeg"
 )
 
 // config contains the content read from the gool config file

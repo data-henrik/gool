@@ -32,8 +32,7 @@ import (
 )
 
 var preamble = `gool (Go - Online TV Recorder on Linux) ` + Version + `
-Copyright (C) 2018 Michael Picht <https://github.com/mipimipi/gool>
-`
+Copyright (C) 2018 Michael Picht <https://github.com/mipimipi/gool>`
 
 var helpTemplate = preamble + `
 {{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
@@ -55,11 +54,11 @@ var cmdLst = &cobra.Command{
 	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// retrieve flags
-		cmd.ParseFlags(args)
+		_ = cmd.ParseFlags(args)
 		// set up logg logging
 		createLogger(logFile)
 		// print copyright etc. on command line
-		fmt.Printf(preamble)
+		fmt.Println(preamble)
 		// Read configuration and ...
 		if err := cfg.getFromFile(); err != nil {
 			fmt.Println(err.Error())
@@ -88,11 +87,11 @@ var cmdPrc = &cobra.Command{
 	Args: cobra.ArbitraryArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		// retrieve flags
-		cmd.ParseFlags(args)
+		_ = cmd.ParseFlags(args)
 		// set up logging
 		createLogger(logFile)
 		// print copyright etc. on command line
-		fmt.Printf(preamble)
+		fmt.Println(preamble)
 		// Read configuration and ...
 		if err := cfg.getFromFile(); err != nil {
 			fmt.Println(err.Error())
