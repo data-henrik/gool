@@ -16,3 +16,5 @@ debug
 gool
 .vscode/launch.json
 .vscode/tasks.json
+Godeps/Godeps.json
+Godeps/Readme

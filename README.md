@@ -85,7 +85,7 @@ gool requires a working directory (e.g. `~/Videos/OTR`). In this directory, the 
 
 ### Call
 
-The command `gool list` lists all video files, that are stored in the working directory or its sub directories, incl. its processing status. `gool process` starts processing of videos. In both cases, additional file paths can be passed to the command. These files are considered by gool as well. The command `gool process ~/Downloads/*` would process videos located in the downloads folder (in addition to the videos stored in the working directoy and its sub directories). The flag `--log [file]` after on of the sub commands switches on logging.
+The command `gool list` lists all video files, that are stored in the working directory or its sub directories, incl. its processing status. `gool process` starts processing of videos. In both cases, additional file paths can be passed to the command. These files are considered by gool as well. The command `gool process ~/Downloads/*` would process videos located in the downloads folder (in addition to the videos stored in the working directoy and its sub directories). The flag `--log [file]` placed behind one of the sub commands switches on logging.
 
 If the mime type for otrkey files has been created, a double click on such a file is sufficient to decode an cut it with gool.
 
