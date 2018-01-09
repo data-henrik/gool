@@ -81,7 +81,7 @@ During the first call gool requires some inputs for configuraion. This data is s
 
 ### Directories
 
-gool requires a working directory (e.g. `~/Videos/OTR`). In this directory, the sub directories `Encoded`, `Decoded` and `Cut` are created. They'll store the video files depending on its processing status. `Cut`, for instance, contains the video files that have been cut, `Decoded` the decoded and uncut files (it can happen that a video can be decoded but cannot be cut because cutlists donÄt exist yet). If videos have been cut, the uncut version is stored in the sub directory `Decoded/Archive`to allow users to repeat the cutting if they are not hapoy with the result. Moreover, a sub directory `log` is being created. It contains log files if errors occurred.
+gool requires a working directory (e.g. `~/Videos/OTR`). In this directory, the sub directories `Encoded`, `Decoded` and `Cut` are created. They'll store the video files depending on its processing status. `Cut`, for instance, contains the video files that have been cut, `Decoded` the decoded and uncut files (it can happen that a video can be decoded but cannot be cut because cutlists don't exist yet). If videos have been cut, the uncut version is stored in the sub directory `Decoded/Archive`to allow users to repeat the cutting if they are not happy with the result. In addition, a sub directory `log` is being created. It contains log files in case of errors.
 
 ### Call
 
