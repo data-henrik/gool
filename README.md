@@ -91,6 +91,6 @@ If the mime type for otrkey files has been created, a double click on such a fil
 
 ### Processing
 
-gool is capable to process many videos in one call. Processing happens in a concurrent way. For one video, decoding and fetching of cutlists is done parallel. Dependencies are being taken care of. I.e. the cutting step will only be started after the decoding and the loading of cutlists has been done. Processing steps of different videos are independend of each other and thus are executed in parallel as well. During processing, progress is displayed. After processing has ended, the result will be shown as summary.
+gool is capable to process many videos in one call. Processing happens in a concurrent way. For one video, decoding and fetching of cutlists is done parallel. Dependencies are being taken care of, i.e. the cutting step will only be started after the decoding and the loading of cutlists has been done. Processing steps of different videos are independent of each other and thus are executed in parallel as well. During processing, progress is displayed. After processing has ended, the result will be shown as summary.
 
-Since gool uses [MKVmerge](https://mkvtoolnix.download/doc/mkvmerge.html) to cut videos, the resulting files has the [Matroska container format](https://de.wikipedia.org/wiki/Matroska) (.mkv).
+Since gool uses [MKVmerge](https://mkvtoolnix.download/doc/mkvmerge.html) to cut videos, the resulting files are stored in the [Matroska container format](https://de.wikipedia.org/wiki/Matroska) (.mkv).
